@@ -54,7 +54,7 @@ public class Generator extends JFrame {
 	private JTextArea txtLog;
 	private JLabel txtGenXmlName;
 
-	/**
+	/** tt
 	 * Launch the application.
 	 */
 	public static void main(String[] args) {
