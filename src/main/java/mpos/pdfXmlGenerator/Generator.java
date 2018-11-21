@@ -74,7 +74,6 @@ public class Generator extends JFrame {
 	JButton openXmlButton;
 	private JScrollPane scrollPane;
 	private JTextArea txtLog;
-	private JLabel txtGenXmlName;
 	private JLabel lblXml;
 	private JLabel label_1;
 	private JTextField txtPdfName;
@@ -82,6 +81,7 @@ public class Generator extends JFrame {
 	private JTextField txtPageIndex;
 	private JLabel lblStartdate;
 	private JTextField txtStartDate;
+	private JTextField txtGenXmlName;
 
 	/**
 	 * tt Launch the application.
@@ -186,7 +186,7 @@ public class Generator extends JFrame {
 		frmXml.getContentPane().add(btnGenXml);
 
 		scrollPane = new JScrollPane();
-		springLayout.putConstraint(SpringLayout.SOUTH, btnGenXml, -53, SpringLayout.NORTH, scrollPane);
+		springLayout.putConstraint(SpringLayout.SOUTH, btnGenXml, -55, SpringLayout.NORTH, scrollPane);
 		springLayout.putConstraint(SpringLayout.WEST, scrollPane, 22, SpringLayout.WEST, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.NORTH, scrollPane, 266, SpringLayout.NORTH, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.SOUTH, scrollPane, -17, SpringLayout.SOUTH, frmXml.getContentPane());
@@ -197,14 +197,7 @@ public class Generator extends JFrame {
 		txtLog.setEditable(false);
 		scrollPane.setViewportView(txtLog);
 
-		txtGenXmlName = new JLabel("None");
-		springLayout.putConstraint(SpringLayout.SOUTH, txtGenXmlName, -10, SpringLayout.NORTH, scrollPane);
-		txtGenXmlName.setHorizontalAlignment(SwingConstants.LEFT);
-		txtGenXmlName.setForeground(Color.BLUE);
-		frmXml.getContentPane().add(txtGenXmlName);
-
 		lblXml = new JLabel("XML \u6A23\u7248\u6A94\u540D\u7A31\uFF1A");
-		springLayout.putConstraint(SpringLayout.WEST, txtGenXmlName, 1, SpringLayout.EAST, lblXml);
 		springLayout.putConstraint(SpringLayout.WEST, lblXml, 27, SpringLayout.WEST, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.SOUTH, lblXml, -6, SpringLayout.NORTH, scrollPane);
 		springLayout.putConstraint(SpringLayout.EAST, lblXml, -570, SpringLayout.EAST, frmXml.getContentPane());
@@ -218,7 +211,7 @@ public class Generator extends JFrame {
 		frmXml.getContentPane().add(label_1);
 
 		txtPdfName = new JTextField();
-		springLayout.putConstraint(SpringLayout.NORTH, btnGenXml, 25, SpringLayout.SOUTH, txtPdfName);
+		springLayout.putConstraint(SpringLayout.NORTH, btnGenXml, 23, SpringLayout.SOUTH, txtPdfName);
 		springLayout.putConstraint(SpringLayout.WEST, txtPdfName, 193, SpringLayout.WEST, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.EAST, txtPdfName, -19, SpringLayout.EAST, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.SOUTH, txtXmlSavePath, -19, SpringLayout.NORTH, txtPdfName);
@@ -237,7 +230,6 @@ public class Generator extends JFrame {
 		frmXml.getContentPane().add(lblPageindex);
 
 		txtPageIndex = new JTextField();
-		springLayout.putConstraint(SpringLayout.NORTH, txtGenXmlName, 34, SpringLayout.SOUTH, txtPageIndex);
 		springLayout.putConstraint(SpringLayout.SOUTH, txtPageIndex, -445, SpringLayout.SOUTH, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.WEST, txtPageIndex, 19, SpringLayout.EAST, lblPageindex);
 		springLayout.putConstraint(SpringLayout.NORTH, lblPageindex, 4, SpringLayout.NORTH, txtPageIndex);
@@ -253,10 +245,10 @@ public class Generator extends JFrame {
 
 		txtStartDate = new JTextField();
 		springLayout.putConstraint(SpringLayout.NORTH, txtStartDate, 27, SpringLayout.SOUTH, txtPdfName);
-		springLayout.putConstraint(SpringLayout.SOUTH, txtStartDate, -68, SpringLayout.NORTH, scrollPane);
-		springLayout.putConstraint(SpringLayout.EAST, lblStartdate, -8, SpringLayout.WEST, txtStartDate);
 		springLayout.putConstraint(SpringLayout.WEST, txtStartDate, 392, SpringLayout.WEST, frmXml.getContentPane());
+		springLayout.putConstraint(SpringLayout.SOUTH, txtStartDate, -68, SpringLayout.NORTH, scrollPane);
 		springLayout.putConstraint(SpringLayout.EAST, txtStartDate, -50, SpringLayout.WEST, btnGenXml);
+		springLayout.putConstraint(SpringLayout.EAST, lblStartdate, -8, SpringLayout.WEST, txtStartDate);
 		txtStartDate.setColumns(10);
 		txtStartDate.setBackground(Color.WHITE);
 		frmXml.getContentPane().add(txtStartDate);
@@ -265,6 +257,14 @@ public class Generator extends JFrame {
 		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
 		String strDate = dateFormat.format(date);
 		this.txtStartDate.setText(strDate);
+		
+		txtGenXmlName = new JTextField();
+		springLayout.putConstraint(SpringLayout.NORTH, txtGenXmlName, -37, SpringLayout.NORTH, scrollPane);
+		springLayout.putConstraint(SpringLayout.WEST, txtGenXmlName, 5, SpringLayout.EAST, lblXml);
+		springLayout.putConstraint(SpringLayout.SOUTH, txtGenXmlName, -9, SpringLayout.NORTH, scrollPane);
+		txtGenXmlName.setColumns(10);
+		txtGenXmlName.setBackground(Color.WHITE);
+		frmXml.getContentPane().add(txtGenXmlName);
 
 	}
 
@@ -513,9 +513,9 @@ public class Generator extends JFrame {
 			generatorXml(xmlItems, xmlSaveName);
 			reOrgXmlAttrs(xmlSaveName);
 
-			this.txtLog.append("----------------------------------------------------------------------------------" + newline);
-			this.txtLog.append("總共偵測到： " + totalCount + "欄位, 共產生 " + genCount + " 個 item 節點於 XML 樣版檔中！" + newline);
-			this.txtLog.append("----------------------------------------------------------------------------------" + newline);
+			this.txtLog.append("---------------------------------------------------------------------------------------" + newline);
+			this.txtLog.append("總共偵測到： " + totalCount + " 欄位, 共產生 " + genCount + " 個 item 節點於 XML 樣版檔中！" + newline);
+			this.txtLog.append("---------------------------------------------------------------------------------------" + newline);
 
 			txtLog.append("Done creating XML File" + newline);
 
