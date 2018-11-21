@@ -50,6 +50,14 @@ import bsh.This;
  */
 public class DocGenerator {
 
+	public DocGenerator(String fontsPath, String dataJsonPath, String webPackagePath, String pdfSavePath) {
+		this.mainPath = pdfSavePath;
+		this.resourcePath = webPackagePath;
+		this.jsonPath = webPackagePath;
+		this.normalFontPath = fontsPath + "\\kaiu.ttf";
+		this.symbolFontPath = fontsPath + "\\DejaVuSans.ttf";
+	}
+
 	// 主要目錄
 	private static String mainPath = "C:\\Users\\Weu\\Desktop\\DocGenerate\\pdfTest\\";
 
@@ -57,7 +65,7 @@ public class DocGenerator {
 	private static String docVersion;
 
 	// 設定檔目錄
-	//private static String resourcePath = "C:\\Users\\Weu\\Desktop\\mPOS_iOSHtml";
+	// private static String resourcePath = "C:\\Users\\Weu\\Desktop\\mPOS_iOSHtml";
 	private static String resourcePath = "C:\\Users\\Weu\\Desktop\\test";
 
 	// 產生 pdf 所需的 json data
@@ -80,7 +88,7 @@ public class DocGenerator {
 	static float dejaVuFontSize = 15;
 
 	// 問卷Map
-	//private Map<String, List<JsonNode>> questMap = new LinkedHashMap<>();
+	// private Map<String, List<JsonNode>> questMap = new LinkedHashMap<>();
 
 	public boolean startGenerate(String fillData, String newPolicyNo) throws IOException {
 
@@ -550,33 +558,33 @@ public class DocGenerator {
 
 	public static void main(String[] args) throws Exception {
 
-		boolean test = false;
-
-		if (test) {
-			testPdf();
-			return;
-		}
-
-		DocGenerator docGenerator = new DocGenerator();
-		docGenerator.setDocVersion("");
-
-		try {
-
-			File jsonFile = new File(jsonPath);
-			String jsonData = new String(Files.readAllBytes(jsonFile.toPath()));
-			String policyNo = "AAA";
-
-			String jsonQuery = jsonData;
-			ObjectMapper mapper = new ObjectMapper();
-			JsonNode jMap;
-
-			jMap = mapper.readTree(jsonQuery); // 將json各值放入map
-
-			boolean pdfFillSuccess = docGenerator.startGenerate(jMap.at("/fillData").toString(), policyNo);
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+//		boolean test = false;
+//
+//		if (test) {
+//			testPdf();
+//			return;
+//		}
+//
+//		DocGenerator docGenerator = new DocGenerator("", "", "");
+//		docGenerator.setDocVersion("");
+//
+//		try {
+//
+//			File jsonFile = new File(jsonPath);
+//			String jsonData = new String(Files.readAllBytes(jsonFile.toPath()));
+//			String policyNo = "AAA";
+//
+//			String jsonQuery = jsonData;
+//			ObjectMapper mapper = new ObjectMapper();
+//			JsonNode jMap;
+//
+//			jMap = mapper.readTree(jsonQuery); // 將json各值放入map
+//
+//			boolean pdfFillSuccess = docGenerator.startGenerate(jMap.at("/fillData").toString(), policyNo);
+//
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
 
 		// try {
 		//

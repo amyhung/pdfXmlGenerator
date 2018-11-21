@@ -6,11 +6,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.PrivilegedActionException;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.ParseException;
@@ -46,7 +48,11 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.AcroFields;
 import com.itextpdf.text.pdf.PdfDictionary;
@@ -82,6 +88,11 @@ public class Generator extends JFrame {
 	private JLabel lblStartdate;
 	private JTextField txtStartDate;
 	private JTextField txtGenXmlName;
+	private JButton btnGenPdf;
+	String fontsPath = "";
+	String dataJsonPath = "";
+	String webPackagePath = "";
+	String pdfSavePath = "";
 
 	/**
 	 * tt Launch the application.
@@ -171,7 +182,8 @@ public class Generator extends JFrame {
 		frmXml.getContentPane().add(txtPdfPath);
 
 		btnGenXml = new JButton("\u7522\u751F\u5957\u7248 XML \u6A94");
-		springLayout.putConstraint(SpringLayout.EAST, btnGenXml, -34, SpringLayout.EAST, frmXml.getContentPane());
+		springLayout.putConstraint(SpringLayout.WEST, btnGenXml, -164, SpringLayout.EAST, frmXml.getContentPane());
+		springLayout.putConstraint(SpringLayout.EAST, btnGenXml, -19, SpringLayout.EAST, frmXml.getContentPane());
 		btnGenXml.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				try {
@@ -186,7 +198,7 @@ public class Generator extends JFrame {
 		frmXml.getContentPane().add(btnGenXml);
 
 		scrollPane = new JScrollPane();
-		springLayout.putConstraint(SpringLayout.SOUTH, btnGenXml, -55, SpringLayout.NORTH, scrollPane);
+		springLayout.putConstraint(SpringLayout.SOUTH, btnGenXml, -64, SpringLayout.NORTH, scrollPane);
 		springLayout.putConstraint(SpringLayout.WEST, scrollPane, 22, SpringLayout.WEST, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.NORTH, scrollPane, 266, SpringLayout.NORTH, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.SOUTH, scrollPane, -17, SpringLayout.SOUTH, frmXml.getContentPane());
@@ -211,7 +223,7 @@ public class Generator extends JFrame {
 		frmXml.getContentPane().add(label_1);
 
 		txtPdfName = new JTextField();
-		springLayout.putConstraint(SpringLayout.NORTH, btnGenXml, 23, SpringLayout.SOUTH, txtPdfName);
+		springLayout.putConstraint(SpringLayout.NORTH, btnGenXml, 12, SpringLayout.SOUTH, txtPdfName);
 		springLayout.putConstraint(SpringLayout.WEST, txtPdfName, 193, SpringLayout.WEST, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.EAST, txtPdfName, -19, SpringLayout.EAST, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.SOUTH, txtXmlSavePath, -19, SpringLayout.NORTH, txtPdfName);
@@ -247,7 +259,7 @@ public class Generator extends JFrame {
 		springLayout.putConstraint(SpringLayout.NORTH, txtStartDate, 27, SpringLayout.SOUTH, txtPdfName);
 		springLayout.putConstraint(SpringLayout.WEST, txtStartDate, 392, SpringLayout.WEST, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.SOUTH, txtStartDate, -68, SpringLayout.NORTH, scrollPane);
-		springLayout.putConstraint(SpringLayout.EAST, txtStartDate, -50, SpringLayout.WEST, btnGenXml);
+		springLayout.putConstraint(SpringLayout.EAST, txtStartDate, -65, SpringLayout.WEST, btnGenXml);
 		springLayout.putConstraint(SpringLayout.EAST, lblStartdate, -8, SpringLayout.WEST, txtStartDate);
 		txtStartDate.setColumns(10);
 		txtStartDate.setBackground(Color.WHITE);
@@ -257,7 +269,7 @@ public class Generator extends JFrame {
 		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
 		String strDate = dateFormat.format(date);
 		this.txtStartDate.setText(strDate);
-		
+
 		txtGenXmlName = new JTextField();
 		springLayout.putConstraint(SpringLayout.NORTH, txtGenXmlName, -37, SpringLayout.NORTH, scrollPane);
 		springLayout.putConstraint(SpringLayout.WEST, txtGenXmlName, 5, SpringLayout.EAST, lblXml);
@@ -265,6 +277,22 @@ public class Generator extends JFrame {
 		txtGenXmlName.setColumns(10);
 		txtGenXmlName.setBackground(Color.WHITE);
 		frmXml.getContentPane().add(txtGenXmlName);
+
+		btnGenPdf = new JButton("PDF 套版");
+		springLayout.putConstraint(SpringLayout.NORTH, btnGenPdf, 7, SpringLayout.SOUTH, btnGenXml);
+		springLayout.putConstraint(SpringLayout.SOUTH, btnGenPdf, -10, SpringLayout.NORTH, scrollPane);
+		btnGenPdf.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try {
+					generatorPdf();
+				} catch (Exception e1) {
+					txtLog.append("PDF 套版時發生不可預期的錯誤：" + newline + e1.getMessage());
+				}
+			}
+		});
+		springLayout.putConstraint(SpringLayout.WEST, btnGenPdf, -165, SpringLayout.EAST, frmXml.getContentPane());
+		springLayout.putConstraint(SpringLayout.EAST, btnGenPdf, -20, SpringLayout.EAST, frmXml.getContentPane());
+		frmXml.getContentPane().add(btnGenPdf);
 
 	}
 
@@ -513,9 +541,11 @@ public class Generator extends JFrame {
 			generatorXml(xmlItems, xmlSaveName);
 			reOrgXmlAttrs(xmlSaveName);
 
-			this.txtLog.append("---------------------------------------------------------------------------------------" + newline);
+			this.txtLog.append("---------------------------------------------------------------------------------------"
+					+ newline);
 			this.txtLog.append("總共偵測到： " + totalCount + " 欄位, 共產生 " + genCount + " 個 item 節點於 XML 樣版檔中！" + newline);
-			this.txtLog.append("---------------------------------------------------------------------------------------" + newline);
+			this.txtLog.append("---------------------------------------------------------------------------------------"
+					+ newline);
 
 			txtLog.append("Done creating XML File" + newline);
 
@@ -617,6 +647,150 @@ public class Generator extends JFrame {
 		content = content.replaceAll("H_", "");
 		content = content.replaceAll("I_", "");
 		Files.write(path, content.getBytes(charset));
+
+	}
+
+	/**
+	 * 進行 PDF 套版之前，先進行檢查必要檔案
+	 * 
+	 * @throws SAXException
+	 * @throws IOException
+	 */
+	private boolean checkBeforeGenPpdf() throws SAXException, IOException {
+
+		final String CONFIG_FILE = "/config.xml";
+		File xmlFile;
+
+		try {
+
+			URL fileUrl = getClass().getResource(CONFIG_FILE);
+			xmlFile = new File(fileUrl.getFile());
+
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(null, "無法載入組態檔 config.xml !");
+			this.txtLog.append(e.getMessage());
+			return false;
+		}
+
+		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder dBuilder;
+		Document doc = null;
+
+		try {
+			dBuilder = dbFactory.newDocumentBuilder();
+			doc = dBuilder.parse(xmlFile);
+		} catch (ParserConfigurationException e) {
+			JOptionPane.showMessageDialog(null, "讀取組態檔 config.xml 時發生錯誤！");
+			this.txtLog.append(e.getMessage());
+			return false;
+		}
+
+		doc.getDocumentElement().normalize();
+
+		NodeList nodes = doc.getElementsByTagName("fontsPath");
+		for (int i = 0; i < nodes.getLength(); i++) {
+			Element element = (Element) nodes.item(i);
+			fontsPath = element.getTextContent();
+		}
+
+		nodes = doc.getElementsByTagName("dataJsonPath");
+		for (int i = 0; i < nodes.getLength(); i++) {
+			Element element = (Element) nodes.item(i);
+			dataJsonPath = element.getTextContent();
+		}
+
+		nodes = doc.getElementsByTagName("webPackagePath");
+		for (int i = 0; i < nodes.getLength(); i++) {
+			Element element = (Element) nodes.item(i);
+			webPackagePath = element.getTextContent();
+		}
+
+		nodes = doc.getElementsByTagName("pdfSavePath");
+		for (int i = 0; i < nodes.getLength(); i++) {
+			Element element = (Element) nodes.item(i);
+			pdfSavePath = element.getTextContent();
+		}
+
+		if (fontsPath.length() == 0 || dataJsonPath.length() == 0 || webPackagePath.length() == 0
+				|| pdfSavePath.length() == 0) {
+			JOptionPane.showMessageDialog(null, "組態檔 config.xml 沒有設定必要參數!");
+			this.txtLog.append("組態檔 config.xml 沒有設定必要參數!" + newline);
+			return false;
+		}
+
+		File f = new File(fontsPath + "\\kaiu.ttf");
+		if (!f.isFile()) {
+			JOptionPane.showMessageDialog(null, "於路徑：" + fontsPath + " 下查無 PDF 套版所需的字型檔 kaiu.ttf ");
+			return false;
+		}
+
+		File f2 = new File(fontsPath + "\\DejaVuSans.ttf");
+		if (!f2.isFile()) {
+			JOptionPane.showMessageDialog(null, "於路徑：" + fontsPath + " 下查無 PDF 套版所需的字型檔 DejaVuSans.ttf ");
+			return false;
+		}
+
+		File f3 = new File(dataJsonPath + "\\data.json");
+		if (!f3.isFile()) {
+			JOptionPane.showMessageDialog(null, "於路徑：" + dataJsonPath + " 下查無 PDF 套版所需的 Data Json 檔！ ");
+			return false;
+		}
+
+		if (this.txtGenXmlName.getText().length() == 0) {
+			JOptionPane.showMessageDialog(null, "未指定 XML 樣版檔名稱！ ");
+			return false;
+		}
+
+		File f4 = new File(webPackagePath + "\\settings\\" + this.txtGenXmlName.getText());
+		if (!f4.isFile()) {
+			JOptionPane.showMessageDialog(null,
+					"於路徑：" + webPackagePath + "\\settings\\" + this.txtGenXmlName.getText() + " 下查無設定的 XML 樣版檔案！ ");
+			return false;
+		}
+
+		String pdfName = this.txtGenXmlName.getText().split(Pattern.quote("."))[0];
+		File f5 = new File(webPackagePath + "\\documents\\" + pdfName + ".pdf");
+		if (!f5.isFile()) {
+			JOptionPane.showMessageDialog(null,
+					"於路徑：" + webPackagePath + "\\documents\\" + " 下查無 XML 樣版檔案相應的 PDF 檔  " + pdfName + ".pdf");
+			return false;
+		}
+
+		return true;
+
+	}
+
+	/**
+	 * 產生 PDF 套版檔案
+	 * 
+	 * @throws Exception
+	 */
+	private void generatorPdf() throws Exception {
+
+		if (!checkBeforeGenPpdf())
+			return;
+
+		DocGenerator docGenerator = new DocGenerator(fontsPath, dataJsonPath, webPackagePath, pdfSavePath);
+
+		docGenerator.setDocVersion("");
+
+		try {
+
+			File jsonFile = new File(dataJsonPath + "\\data.json");
+			String jsonData = new String(Files.readAllBytes(jsonFile.toPath()));
+			String policyNo = "";
+
+			String jsonQuery = jsonData;
+			ObjectMapper mapper = new ObjectMapper();
+			JsonNode jMap;
+
+			jMap = mapper.readTree(jsonQuery); // 將json各值放入map
+
+			boolean pdfFillSuccess = docGenerator.startGenerate(jMap.at("/fillData").toString(), policyNo);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
 	}
 

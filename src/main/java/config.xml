@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Config>
-	<fontsPath></fontsPath>
-	<dataJsonPath></dataJsonPath>
-	<webPackagePath></webPackagePath>
-</Config>
+<config>
+	<fontsPath>D:\projects\TGL\Git\mPOS\PdfXmlGenerator\settings\fonts</fontsPath>
+	<dataJsonPath>D:\projects\TGL\Git\mPOS\PdfXmlGenerator\settings</dataJsonPath>
+	<webPackagePath>D:\projects\TGL\Git\mPOS\PdfXmlGenerator\settings\web</webPackagePath>
+	<pdfSavePath>D:\projects\TGL\Git\mPOS\PdfXmlGenerator\GenPdfs</pdfSavePath>
+</config>
