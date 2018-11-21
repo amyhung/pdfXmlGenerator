@@ -5,6 +5,8 @@ import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -46,6 +48,9 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -127,7 +132,7 @@ public class Generator extends JFrame {
 
 		frmXml = new JFrame();
 		frmXml.setResizable(false);
-		frmXml.setTitle("\u884C\u52D5\u6295\u4FDD XML \u7522\u751F\u5668");
+		frmXml.setTitle("行動投保套版工具");
 		frmXml.setBounds(100, 100, 745, 678);
 		frmXml.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		SpringLayout springLayout = new SpringLayout();
@@ -210,9 +215,8 @@ public class Generator extends JFrame {
 		scrollPane.setViewportView(txtLog);
 
 		lblXml = new JLabel("XML \u6A23\u7248\u6A94\u540D\u7A31\uFF1A");
-		springLayout.putConstraint(SpringLayout.WEST, lblXml, 27, SpringLayout.WEST, frmXml.getContentPane());
+		springLayout.putConstraint(SpringLayout.WEST, lblXml, 32, SpringLayout.WEST, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.SOUTH, lblXml, -6, SpringLayout.NORTH, scrollPane);
-		springLayout.putConstraint(SpringLayout.EAST, lblXml, -570, SpringLayout.EAST, frmXml.getContentPane());
 		lblXml.setHorizontalAlignment(SwingConstants.RIGHT);
 		lblXml.setForeground(Color.BLUE);
 		frmXml.getContentPane().add(lblXml);
@@ -223,6 +227,7 @@ public class Generator extends JFrame {
 		frmXml.getContentPane().add(label_1);
 
 		txtPdfName = new JTextField();
+		springLayout.putConstraint(SpringLayout.EAST, label_1, -19, SpringLayout.WEST, txtPdfName);
 		springLayout.putConstraint(SpringLayout.NORTH, btnGenXml, 12, SpringLayout.SOUTH, txtPdfName);
 		springLayout.putConstraint(SpringLayout.WEST, txtPdfName, 193, SpringLayout.WEST, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.EAST, txtPdfName, -19, SpringLayout.EAST, frmXml.getContentPane());
@@ -234,17 +239,17 @@ public class Generator extends JFrame {
 		frmXml.getContentPane().add(txtPdfName);
 
 		lblPageindex = new JLabel("PageIndex");
+		springLayout.putConstraint(SpringLayout.EAST, lblXml, 0, SpringLayout.EAST, lblPageindex);
+		springLayout.putConstraint(SpringLayout.NORTH, lblPageindex, 32, SpringLayout.SOUTH, label_1);
 		springLayout.putConstraint(SpringLayout.NORTH, lblXml, 37, SpringLayout.SOUTH, lblPageindex);
-		springLayout.putConstraint(SpringLayout.EAST, label_1, 0, SpringLayout.EAST, lblPageindex);
 		lblPageindex.setHorizontalAlignment(SwingConstants.RIGHT);
 		springLayout.putConstraint(SpringLayout.WEST, lblPageindex, 97, SpringLayout.WEST, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.EAST, lblPageindex, -565, SpringLayout.EAST, frmXml.getContentPane());
 		frmXml.getContentPane().add(lblPageindex);
 
 		txtPageIndex = new JTextField();
-		springLayout.putConstraint(SpringLayout.SOUTH, txtPageIndex, -445, SpringLayout.SOUTH, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.WEST, txtPageIndex, 19, SpringLayout.EAST, lblPageindex);
-		springLayout.putConstraint(SpringLayout.NORTH, lblPageindex, 4, SpringLayout.NORTH, txtPageIndex);
+		springLayout.putConstraint(SpringLayout.SOUTH, txtPageIndex, -445, SpringLayout.SOUTH, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.NORTH, txtPageIndex, 27, SpringLayout.SOUTH, txtPdfName);
 		txtPageIndex.setText("1");
 		txtPageIndex.setColumns(10);
@@ -272,13 +277,13 @@ public class Generator extends JFrame {
 
 		txtGenXmlName = new JTextField();
 		springLayout.putConstraint(SpringLayout.NORTH, txtGenXmlName, -37, SpringLayout.NORTH, scrollPane);
-		springLayout.putConstraint(SpringLayout.WEST, txtGenXmlName, 5, SpringLayout.EAST, lblXml);
+		springLayout.putConstraint(SpringLayout.WEST, txtGenXmlName, 0, SpringLayout.WEST, txtPageIndex);
 		springLayout.putConstraint(SpringLayout.SOUTH, txtGenXmlName, -9, SpringLayout.NORTH, scrollPane);
 		txtGenXmlName.setColumns(10);
 		txtGenXmlName.setBackground(Color.WHITE);
 		frmXml.getContentPane().add(txtGenXmlName);
 
-		btnGenPdf = new JButton("PDF 套版");
+		btnGenPdf = new JButton("套版產生 PDF");
 		springLayout.putConstraint(SpringLayout.NORTH, btnGenPdf, 7, SpringLayout.SOUTH, btnGenXml);
 		springLayout.putConstraint(SpringLayout.SOUTH, btnGenPdf, -10, SpringLayout.NORTH, scrollPane);
 		btnGenPdf.addActionListener(new ActionListener() {
@@ -314,7 +319,7 @@ public class Generator extends JFrame {
 			if (returnVal == JFileChooser.APPROVE_OPTION) {
 				File file = fcPdf.getSelectedFile();
 				this.txtPdfPath.setText(file.getPath());
-				txtLog.append("��� PDF: " + file.getPath() + "." + newline);
+				txtLog.append("選擇 PDF: " + file.getPath() + "." + newline);
 			} else {
 				txtLog.append("Open command cancelled by user." + newline);
 			}
@@ -444,7 +449,7 @@ public class Generator extends JFrame {
 				totalCount++;
 
 				// check 欄位名稱是否有照 field 的名稱定義規範：
-				// 以「:」為區隔，組合各項設定參數：
+				// 以「#」為區隔，組合各項設定參數：
 				// 1-資料群組排序:數字，依照數字順序產生 xml 節點
 				// 2-menuId
 				// 3-itemId
@@ -770,26 +775,72 @@ public class Generator extends JFrame {
 		if (!checkBeforeGenPpdf())
 			return;
 
-		DocGenerator docGenerator = new DocGenerator(fontsPath, dataJsonPath, webPackagePath, pdfSavePath);
+		String pdfName = "";
+		Charset charset = StandardCharsets.UTF_8;
+		File jsonFile = new File(dataJsonPath + "\\data.json");
 
+		try {
+
+			String jsonData = new String(Files.readAllBytes(jsonFile.toPath()), "UTF-8");
+
+			pdfName = this.txtGenXmlName.getText().split(Pattern.quote("."))[0];
+
+			// 先將 json 裡的 page 節點的頁面改為指定的
+			JSONParser parser = new JSONParser();
+			// Object obj = parser.parse(new FileReader(dataJsonPath + "\\data.json"));
+			Object obj = parser.parse(jsonData);
+			JSONObject jsonObject = (JSONObject) obj;
+			JSONObject fillDataNode = (JSONObject) jsonObject.get("fillData");
+			JSONArray pageNodeL1 = (JSONArray) fillDataNode.get("page");
+			JSONArray pageNodeL2 = (JSONArray) pageNodeL1.get(0);
+			if (pageNodeL2.size() == 1)
+				pageNodeL2.remove(0);
+
+			pageNodeL2.add(pdfName);
+
+			//this.txtLog.append(jsonObject.toJSONString() + newline);
+			//this.txtLog.append(newline);
+
+			Path path = Paths.get(dataJsonPath + "\\data.json");
+			Files.write(path, jsonObject.toJSONString().getBytes(charset));
+			//this.txtLog.append(jsonObject.toJSONString() + newline);
+
+		} catch (Exception e) {
+			this.txtLog.setText("");
+			this.txtLog.append("在設定 Data Json 中的 page 節點資料時發生錯誤，請檢查檔案格式是否有誤！" + newline);
+			this.txtLog.append(e.getStackTrace().toString());
+			return;
+		}
+
+		// 以下開始進行 PDF 套版
+		DocGenerator docGenerator = new DocGenerator(fontsPath, dataJsonPath, webPackagePath, pdfSavePath);
 		docGenerator.setDocVersion("");
 
 		try {
 
-			File jsonFile = new File(dataJsonPath + "\\data.json");
-			String jsonData = new String(Files.readAllBytes(jsonFile.toPath()));
-			String policyNo = "";
+			String jsonData = new String(Files.readAllBytes(jsonFile.toPath()), "UTF-8");
+			//this.txtLog.append(newline);
+			//this.txtLog.append(jsonData + newline);
+			String policyNo = "Generated";
 
 			String jsonQuery = jsonData;
 			ObjectMapper mapper = new ObjectMapper();
 			JsonNode jMap;
 
-			jMap = mapper.readTree(jsonQuery); // 將json各值放入map
+			jMap = mapper.readTree(jsonQuery); // 將 json 各值放入 map
 
 			boolean pdfFillSuccess = docGenerator.startGenerate(jMap.at("/fillData").toString(), policyNo);
 
+			if (pdfFillSuccess) {
+				this.txtLog.append("PDF - " + pdfName + ".pdf 產生成功！" + newline);
+			} else {
+				this.txtLog.append("PDF 產生失敗！" + newline);
+			}
+
 		} catch (Exception e) {
-			e.printStackTrace();
+			this.txtLog.setText("");
+			this.txtLog.append("在執行 PDF 套版時發生錯誤！" + newline);
+			this.txtLog.append(e.getMessage() + newline);
 		}
 
 	}

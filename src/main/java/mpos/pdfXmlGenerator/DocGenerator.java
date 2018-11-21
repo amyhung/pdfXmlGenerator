@@ -51,7 +51,7 @@ import bsh.This;
 public class DocGenerator {
 
 	public DocGenerator(String fontsPath, String dataJsonPath, String webPackagePath, String pdfSavePath) {
-		this.mainPath = pdfSavePath;
+		this.mainPath = pdfSavePath + "\\";
 		this.resourcePath = webPackagePath;
 		this.jsonPath = webPackagePath;
 		this.normalFontPath = fontsPath + "\\kaiu.ttf";
@@ -90,20 +90,20 @@ public class DocGenerator {
 	// 問卷Map
 	// private Map<String, List<JsonNode>> questMap = new LinkedHashMap<>();
 
-	public boolean startGenerate(String fillData, String newPolicyNo) throws IOException {
+	public boolean startGenerate(String fillData, String newPolicyNo) throws Exception {
 
-		File index = new File(mainPath + newPolicyNo);
-		String[] entries = index.list();
-		for (String s : entries) {
-			File currentFile = new File(index.getPath(), s);
-			currentFile.delete();
-		}
+//		File index = new File(mainPath + newPolicyNo);
+//		String[] entries = index.list();
+//		for (String s : entries) {
+//			File currentFile = new File(index.getPath(), s);
+//			currentFile.delete();
+//		}
 
 		// FileUtils.deleteDirectory(new File(mainPath + newPolicyNo));
 		return startGenerate(fillData, newPolicyNo, null);
 	}
 
-	public boolean startGenerate(String fillData, String newPolicyNo, String subPath) {
+	public boolean startGenerate(String fillData, String newPolicyNo, String subPath) throws Exception {
 
 		try {
 
@@ -118,6 +118,7 @@ public class DocGenerator {
 						FileUtils.deleteDirectory(new File(mainPath + newPolicyNo + "/" + i));
 					} catch (Exception e) {
 						System.out.println("刪除:" + mainPath + newPolicyNo + "/" + i + "時發生錯誤");
+						throw new Exception("刪除:" + mainPath + newPolicyNo + "/" + i + "時發生錯誤");
 					}
 				}
 			} else {
@@ -145,7 +146,8 @@ public class DocGenerator {
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-			return false;
+			throw new Exception(e.getMessage());
+			// return false;
 		}
 	}
 
@@ -370,6 +372,7 @@ public class DocGenerator {
 							} catch (Exception e) {
 								e.printStackTrace();
 								System.out.println("PDF錯誤 錯誤檔案:" + pathMap.get("original_PDF_path"));
+								throw new Exception("PDF錯誤 錯誤檔案:" + pathMap.get("original_PDF_path"));
 							}
 							// pageNum++;
 							pathMap = createPathMap(jmap, p, newPolicyNo, g, subPath);
@@ -386,7 +389,7 @@ public class DocGenerator {
 	}
 
 	/* 生成pdf所需路徑Map */
-	private HashMap createPathMap(JsonNode jmap, int p, String newPolicyNo, int g, String subPath) {
+	private HashMap createPathMap(JsonNode jmap, int p, String newPolicyNo, int g, String subPath) throws Exception {
 		try {
 			if (jmap.at("/page/" + g + "/" + p).asText().isEmpty()) {
 				return null;
@@ -431,12 +434,13 @@ public class DocGenerator {
 			e.printStackTrace();
 			System.out.println("Mobile Insured Error: Fail when generating pathMap.");
 			System.out.println("Error page :" + jmap.at("/page/" + g + "/" + p).asText());
-			return null;
+			throw new Exception("Mobile Insured Error: Fail when generating pathMap.");
+			// return null;
 		}
 	}
 
 	/* 取得XML NodeLsit */
-	private static NodeList getNodeList(String settingXmlPath) {
+	private static NodeList getNodeList(String settingXmlPath) throws Exception {
 		try {
 			File xml = new File(settingXmlPath.replace("", "")); // xml path
 			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
@@ -445,7 +449,7 @@ public class DocGenerator {
 			doc.getDocumentElement().normalize();
 			return doc.getElementsByTagName("item"); // 取得所有item標籤名 回傳Nodelist
 		} catch (Exception e) {
-			return null;
+			throw new Exception(e.getMessage());
 		}
 	}
 
