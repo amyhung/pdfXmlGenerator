@@ -53,6 +53,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
@@ -214,7 +215,7 @@ public class Generator extends JFrame {
 		txtLog.setEditable(false);
 		scrollPane.setViewportView(txtLog);
 
-		lblXml = new JLabel("XML \u6A23\u7248\u6A94\u540D\u7A31\uFF1A");
+		lblXml = new JLabel("XML 套版檔名稱：");
 		springLayout.putConstraint(SpringLayout.WEST, lblXml, 32, SpringLayout.WEST, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.SOUTH, lblXml, -6, SpringLayout.NORTH, scrollPane);
 		lblXml.setHorizontalAlignment(SwingConstants.RIGHT);
@@ -548,7 +549,7 @@ public class Generator extends JFrame {
 
 			this.txtLog.append("---------------------------------------------------------------------------------------"
 					+ newline);
-			this.txtLog.append("總共偵測到： " + totalCount + " 欄位, 共產生 " + genCount + " 個 item 節點於 XML 樣版檔中！" + newline);
+			this.txtLog.append("總共偵測到： " + totalCount + " 欄位, 共產生 " + genCount + " 個 item 節點於 XML 套版檔中！" + newline);
 			this.txtLog.append("---------------------------------------------------------------------------------------"
 					+ newline);
 
@@ -742,14 +743,14 @@ public class Generator extends JFrame {
 		}
 
 		if (this.txtGenXmlName.getText().length() == 0) {
-			JOptionPane.showMessageDialog(null, "未指定 XML 樣版檔名稱！ ");
+			JOptionPane.showMessageDialog(null, "未指定 XML 套版檔名稱！ ");
 			return false;
 		}
 
 		File f4 = new File(webPackagePath + "\\settings\\" + this.txtGenXmlName.getText());
 		if (!f4.isFile()) {
 			JOptionPane.showMessageDialog(null,
-					"於路徑：" + webPackagePath + "\\settings\\" + this.txtGenXmlName.getText() + " 下查無設定的 XML 樣版檔案！ ");
+					"於路徑：" + webPackagePath + "\\settings\\" + this.txtGenXmlName.getText() + " 下查無設定的 XML 套版檔案！ ");
 			return false;
 		}
 
@@ -757,7 +758,7 @@ public class Generator extends JFrame {
 		File f5 = new File(webPackagePath + "\\documents\\" + pdfName + ".pdf");
 		if (!f5.isFile()) {
 			JOptionPane.showMessageDialog(null,
-					"於路徑：" + webPackagePath + "\\documents\\" + " 下查無 XML 樣版檔案相應的 PDF 檔  " + pdfName + ".pdf");
+					"於路徑：" + webPackagePath + "\\documents\\" + " 下查無 XML 套版檔案相應的 PDF 檔  " + pdfName + ".pdf");
 			return false;
 		}
 
@@ -772,18 +773,19 @@ public class Generator extends JFrame {
 	 */
 	private void generatorPdf() throws Exception {
 
+		//this.txtGenXmlName.setText(this.txtGenXmlName.getText().toUpperCase());
+
 		if (!checkBeforeGenPpdf())
 			return;
 
-		String pdfName = "";
+		String pdfName = this.txtGenXmlName.getText().split(Pattern.quote("."))[0];
+		this.txtGenXmlName.setText(pdfName.toUpperCase() + ".xml");
 		Charset charset = StandardCharsets.UTF_8;
 		File jsonFile = new File(dataJsonPath + "\\data.json");
 
 		try {
 
 			String jsonData = new String(Files.readAllBytes(jsonFile.toPath()), "UTF-8");
-
-			pdfName = this.txtGenXmlName.getText().split(Pattern.quote("."))[0];
 
 			// 先將 json 裡的 page 節點的頁面改為指定的
 			JSONParser parser = new JSONParser();
@@ -798,17 +800,25 @@ public class Generator extends JFrame {
 
 			pageNodeL2.add(pdfName);
 
-			//this.txtLog.append(jsonObject.toJSONString() + newline);
-			//this.txtLog.append(newline);
+			// this.txtLog.append(jsonObject.toJSONString() + newline);
+			// this.txtLog.append(newline);
 
 			Path path = Paths.get(dataJsonPath + "\\data.json");
 			Files.write(path, jsonObject.toJSONString().getBytes(charset));
-			//this.txtLog.append(jsonObject.toJSONString() + newline);
+			// this.txtLog.append(jsonObject.toJSONString() + newline);
 
 		} catch (Exception e) {
 			this.txtLog.setText("");
 			this.txtLog.append("在設定 Data Json 中的 page 節點資料時發生錯誤，請檢查檔案格式是否有誤！" + newline);
 			this.txtLog.append(e.getStackTrace().toString());
+			return;
+		}
+
+		try {
+			checkSettingFiles(pdfName);
+		} catch (Exception e) {
+			this.txtLog.append("處理設定檔時發生錯誤！" + newline);
+			this.txtLog.append(e.getMessage() + newline);
 			return;
 		}
 
@@ -819,9 +829,9 @@ public class Generator extends JFrame {
 		try {
 
 			String jsonData = new String(Files.readAllBytes(jsonFile.toPath()), "UTF-8");
-			//this.txtLog.append(newline);
-			//this.txtLog.append(jsonData + newline);
-			String policyNo = "Generated";
+			// this.txtLog.append(newline);
+			// this.txtLog.append(jsonData + newline);
+			String policyNo = "7001100000";
 
 			String jsonQuery = jsonData;
 			ObjectMapper mapper = new ObjectMapper();
@@ -841,6 +851,53 @@ public class Generator extends JFrame {
 			this.txtLog.setText("");
 			this.txtLog.append("在執行 PDF 套版時發生錯誤！" + newline);
 			this.txtLog.append(e.getMessage() + newline);
+		}
+
+	}
+
+	private void checkSettingFiles(String xmlName) throws Exception {
+
+		File settingXml = new File(webPackagePath + "\\settings\\settings.xml");
+		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+		Document doc = dBuilder.parse(settingXml);
+		Element root = doc.getDocumentElement();
+
+		NodeList nodes = doc.getElementsByTagName("item");
+
+		boolean isSettingExist = false;
+
+		for (int i = 0; i < nodes.getLength(); i++) {
+
+			Node item = nodes.item(i);
+			Element itemElement = (Element) item;
+			String id = itemElement.getAttribute("id");
+			String xml = itemElement.getAttribute("xml");
+			String pdf = itemElement.getAttribute("pdf");
+
+			// 有可能有設定，但是 id, xml 的名稱卻設成不同的
+			if (id.equals(xmlName) && id.equals(xml)) {
+				isSettingExist = true;
+				break;
+			}
+
+		}
+
+		if (!isSettingExist) {
+
+			Element item = doc.createElement("item");
+			item.setAttribute("id", xmlName);
+			item.setAttribute("xml", xmlName);
+			item.setAttribute("pdf", xmlName);
+			item.setAttribute("desc", "DD" + this.txtPdfName.getText());
+			root.appendChild(item);
+
+			TransformerFactory transformerFactory = TransformerFactory.newInstance();
+			Transformer transformer = transformerFactory.newTransformer();
+			DOMSource domSource = new DOMSource(doc);
+			StreamResult streamResult = new StreamResult(new File(webPackagePath + "\\settings\\settings.xml"));
+			transformer.transform(domSource, streamResult);
+
 		}
 
 	}
