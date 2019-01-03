@@ -464,21 +464,31 @@ public class Generator extends JFrame {
 					txtLog.append("欄位 " + fName + " 沒有按照規範定義必要參數，此欄位將不會被產生於 XML 檔中" + newline);
 					continue;
 				} else if (formField.length >= 4) {
-					if (!"R".equals(formField[3]) && !"L".equals(formField[3])) {
-						txtLog.append("欄位 \" + fName + \" 的水平資料對齊方式設定錯誤，正確應為 R 或 L, 設定值為 " + formField[3] + newline);
+					if (formField[3].length() > 0 && !"R".equals(formField[3]) && !"L".equals(formField[3])) {
+						txtLog.append("欄位 " + fName + " 的水平資料對齊方式設定錯誤，正確應為 R 或 L, 設定值為 " + formField[3] + newline);
 						continue;
 					}
-					if (formField.length == 5 && !"T".equals(formField[4]) && !"B".equals(formField[4])) {
-						txtLog.append("欄位 \" + fName + \" 的垂直資料對齊方式設定錯誤，正確應為 T 或 B, 設定值為  " + formField[4] + newline);
+					if (formField.length == 5 && !"T".equals(formField[4]) && !"B".equals(formField[4])
+							&& formField[4].length() > 0) {
+						txtLog.append("欄位 " + fName + " 的垂直資料對齊方式設定錯誤，正確應為 T 或 B, 設定值為  " + formField[4] + newline);
 						continue;
 					}
 					horAlign = formField.length >= 4 ? formField[3] : "";
 					verAlign = formField.length >= 5 ? formField[4] : "";
 				}
+
 				if (fields.getField(fName).trim().length() == 0) {
-					txtLog.append("欄位 \" + fName + \" 沒有定義中文欄位名稱, 此欄位將不會被產生於 XML 檔中" + newline);
+					txtLog.append("欄位 " + fName + " 沒有定義中文欄位名稱, 此欄位將不會被產生於 XML 檔中" + newline);
 					continue;
 				}
+
+				try {
+					Integer.parseInt(formField[0]);
+				} catch (Exception e) {
+					txtLog.append("欄位 " + fName + " 的第一個參數「資料群組排序」必須是數字 " + newline);
+					continue;
+				}
+
 				// end check
 
 				List<AcroFields.FieldPosition> positions = fields.getFieldPositions(fName);
@@ -488,6 +498,8 @@ public class Generator extends JFrame {
 				float bottomTop = fieldRect.getTop(); // itext 的是從左下算起
 				float width = fieldRect.getWidth();
 				float height = fieldRect.getHeight();
+				
+				txtLog.append("欄位:" + fName + ", left：" + left + ", bottomTop:" + bottomTop + ", width:" + width + ", height:" + height + newline);
 
 				int page = positions.get(0).page;
 				Rectangle pageSize = reader.getPageSize(page);
@@ -773,7 +785,7 @@ public class Generator extends JFrame {
 	 */
 	private void generatorPdf() throws Exception {
 
-		//this.txtGenXmlName.setText(this.txtGenXmlName.getText().toUpperCase());
+		// this.txtGenXmlName.setText(this.txtGenXmlName.getText().toUpperCase());
 
 		if (!checkBeforeGenPpdf())
 			return;
@@ -831,7 +843,7 @@ public class Generator extends JFrame {
 			String jsonData = new String(Files.readAllBytes(jsonFile.toPath()), "UTF-8");
 			// this.txtLog.append(newline);
 			// this.txtLog.append(jsonData + newline);
-			String policyNo = "7001100000";
+			String policyNo = "7000000998";
 
 			String jsonQuery = jsonData;
 			ObjectMapper mapper = new ObjectMapper();
