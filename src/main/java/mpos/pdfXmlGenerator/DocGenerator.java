@@ -90,56 +90,549 @@ public class DocGenerator {
 		return startGenerate(fillData, newPolicyNo, null);
 	}
 
-	public boolean startGenerate(String fillData, String newPolicyNo, String subPath) throws Exception {
+	 public boolean startGenerate(String fillData, String newPolicyNo,String subPath) {
+	        try {
 
-		try {
+	            //檔案路徑
+	            if (Files.notExists(Paths.get(mainPath + newPolicyNo))) {
+	                Files.createDirectories(Paths.get(mainPath + newPolicyNo));
+	            }
+	            else if(!Files.notExists(Paths.get(mainPath + newPolicyNo))&&subPath!=null){  //刪除特定主約 重新套印
+	                FileUtils.deleteDirectory(new File(mainPath + newPolicyNo+"/"+subPath));
+	            }
+	            else if(!Files.notExists(Paths.get(mainPath + newPolicyNo))&&subPath==null){ //刪除全部主約 重新套印
+	                for(int i = 0 ; i<3;i++) {
+	                    try {
+	                        FileUtils.deleteDirectory(new File(mainPath + newPolicyNo + "/" + i));
+	                    }catch (Exception e){
+	                        System.out.println("刪除:"+mainPath + newPolicyNo + "/" + i+"時發生錯誤");
+	                    }
+	                }
+	            }
+	            else {
+	                System.out.println("Mobile Insured Error: File directory already exist.");
+	                return false;
+	            }
 
-			// 檔案路徑
-			if (Files.notExists(Paths.get(mainPath + newPolicyNo))) {
-				Files.createDirectories(Paths.get(mainPath + newPolicyNo));
-			} else if (!Files.notExists(Paths.get(mainPath + newPolicyNo)) && subPath != null) { // 刪除特定主約 重新套印
-				FileUtils.deleteDirectory(new File(mainPath + newPolicyNo + "/" + subPath));
-			} else if (!Files.notExists(Paths.get(mainPath + newPolicyNo)) && subPath == null) { // 刪除全部主約 重新套印
-				for (int i = 0; i < 3; i++) {
-					try {
-						FileUtils.deleteDirectory(new File(mainPath + newPolicyNo + "/" + i));
-					} catch (Exception e) {
-						System.out.println("刪除:" + mainPath + newPolicyNo + "/" + i + "時發生錯誤");
-						throw new Exception("刪除:" + mainPath + newPolicyNo + "/" + i + "時發生錯誤");
-					}
-				}
-			} else {
-				System.out.println("Mobile Insured Error: File directory already exist.");
-				return false;
-			}
+	            //boolean containProposal = splitProposal(fillData,newPolicyNo);
+	            boolean containProposal = false;
+	            java.util.List<String> filePath = createPdf(fillData, newPolicyNo,subPath);        //產生PDF
+	            //createQuestionaire(fillData,newPolicyNo,subPath);
+	            //createSignaturePdf(filePath);
+	            if(containProposal){  //刪除建議書
+	                FileUtils.deleteDirectory(new File(mainPath + newPolicyNo + "/proposal"));
+	            }
+	            if (filePath!=null&&uiJsonPageNum <= filePath.size()) {
+	                return true;
+	            } else {
+	                //缺頁時刪除要保文件
+	                FileUtils.deleteDirectory(new File(mainPath + newPolicyNo));
+	                System.out.println("Mobile Insured Error: Fail when generating pdf or tif.");
+	                //需要頁數,套印頁數
+	                System.out.println("Needed page :"+uiJsonPageNum+",generated page:"+filePath==null?0:filePath.size());
+	                return false;
+	            }
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	            return false;
+	        }
+	    }
 
-			// boolean containProposal = splitProposal(fillData, newPolicyNo);
-			java.util.List<String> filePath = createPdf(fillData, newPolicyNo, subPath); // 產生PDF
-			// createQuestionaire(fillData, newPolicyNo, subPath);
-			// createSignaturePdf(filePath);
-			// if (containProposal) { // 刪除建議書
-			// FileUtils.deleteDirectory(new File(mainPath + newPolicyNo + "/proposal"));
-			// }
-			if (filePath != null && uiJsonPageNum <= filePath.size()) {
-				return true;
-			} else {
-				// 缺頁時刪除要保文件
-				FileUtils.deleteDirectory(new File(mainPath + newPolicyNo));
-				System.out.println("Mobile Insured Error: Fail when generating pdf or tif.");
-				// 需要頁數,套印頁數
-				System.out.println(
-						"Needed page :" + uiJsonPageNum + ",generated page:" + filePath == null ? 0 : filePath.size());
-				return false;
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new Exception(e.getMessage());
-			// return false;
+	private static float adjustFontSizeToWidth(BaseFont font, float defaultFontSize, String text, float fitWidth) {
+		if (font == null || defaultFontSize <= 0) {
+			return defaultFontSize;
 		}
-	}		
+
+		float fontSize = defaultFontSize;
+		while (font.getWidthPoint(text, fontSize) > fitWidth) {
+			fontSize -= 0.2;
+
+			if (fontSize <= 1)
+				break;
+		}
+
+		return fontSize < 1 ? 1 : fontSize;
+	}
 	
+    /*根據jsonData+xml設定檔產生PDF並回傳*/
+    private java.util.List<String> createPdf(String jsonData, String newPolicyNo,String subPath) {
+
+		float kaiuFontSize = 10;
+		float dejaVuFontSize = 15;
+		
+        try {
+            /*字體設定*/
+            /*一般字型*/
+            BaseFont normalFont = BaseFont.createFont(normalFontPath, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+            /*符號字型 */
+            BaseFont symbolFont = BaseFont.createFont(symbolFontPath, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+            /*json2map*/
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode jmap = mapper.readTree(jsonData); //將json各值放入map
+            /*取得文件分組數   (主約數)*/
+            int groupNum = jmap.at("/page").size();
+            
+			// 組成真正的保單號碼:依有多少主約組成保單號碼，傳入的 newPolicyno 其實只是取號碼而已
+			// 例如 newPolicyno = 7000000001 時
+			// 單主約保單號碼為 70000000010
+			// 多主約(3個主約)保單碼碼為
+			// 70000000011
+			// 70000000012
+			// 70000000013
+			String[] policyCodes = new String[] { "", "", "" }; // 各主約的保單號碼
+            String[][] splitPolicyCodes = new String[3][11]; // 各主約保單號碼 - 拆字字母
+            
+			if (groupNum == 1) {
+				policyCodes[0] = newPolicyNo + "0";
+				splitPolicyCodes[0] = policyCodes[0].split("");
+			} else {
+				for (int p = 1; p <= groupNum; p++) {
+					policyCodes[p - 1] = newPolicyNo + p;
+					splitPolicyCodes[p - 1] = policyCodes[p - 1].split("");
+				}
+			}
+			// end
+			
+            java.util.List<String> pathList = new ArrayList<>();
+            for (int g = 0; g < groupNum; g++){
+            /*取得頁數*/
+            int pSize = jmap.at("/page/"+g).size();
+            uiJsonPageNum+=pSize;
+
+            /*開始處理*/
+            for (int p = 0; p < pSize; p++) {
+
+                /*生成路徑Map + 產生路徑資料夾*/
+                HashMap<String, String> pathMap = createPathMap(jmap, p, newPolicyNo,g,subPath);
+
+                /*路徑Map為Null時處理下一頁*/
+                if (pathMap == null||pathMap.size()==0) {
+                    continue;
+                }
+
+                    String pageId = jmap.at("/page/" + g + "/" + p).asText();
+
+ 					// 為了付款授權書所做的特殊處理
+                     String unbn600FirstPaymentChecked = "";
+                     String unbn600RenewalPaymentChecked = "";
+                     String unbnNum="";
+                     
+                     // 如果目前要產出的是付款授權書頁面
+                     if ("UNBN00600_1_1".equals(pageId) || "UNBN00600_2_1".equals(pageId)
+                             || "UNBN00600_3_1".equals(pageId) || "UNBN00600_4_1".equals(pageId)
+                             || "UNBN00600_5_1".equals(pageId) || "UNBN00600_6_1".equals(pageId)) {
+                         
+                         if("UNBN00600_1_1".equals(pageId)) {
+                             unbnNum = "num1";
+                         } else if("UNBN00600_2_1".equals(pageId)) {
+                             unbnNum = "num2";
+                         } else if("UNBN00600_3_1".equals(pageId)) {
+                             unbnNum = "num3";
+                         } else if("UNBN00600_4_1".equals(pageId)) {
+                             unbnNum = "num4";
+                         }else if("UNBN00600_5_1".equals(pageId)) {
+                             unbnNum = "num5";
+                         } else if("UNBN00600_6_1".equals(pageId)) {
+                             unbnNum = "num6";
+                         }
+ 
+                         // 以下兩個參數是前端給的，告訴後端此主約的信用卡套用至首期/續期
+                         // 會這樣做是因為目前此要保文件的設計維度有問題，因此只好在後端多判斷它
+                         String covNum = "cov" + (g + 1);
+                         
+                         if (!jmap.at("/payment/" + unbnNum + "_" + covNum + "_first").asText().isEmpty()) {
+                             unbn600FirstPaymentChecked = "v";
+                         }
+                         
+                         if (!jmap.at("/payment/" + unbnNum + "_" + covNum + "_renewal").asText().isEmpty()) {
+                             unbn600RenewalPaymentChecked = "v";
+                         }
+ 
+                     }
+                     // end
+
+                /*PDF設定*/
+                PdfReader reader = new PdfReader(pathMap.get("original_PDF_path")); //input PDF path
+                 /*設定檔內容為空或找不到設定檔 直接存PDF 處理下一頁*/
+
+                for (int pageNumber = 1; pageNumber <= reader.getNumberOfPages(); pageNumber++) {
+                    //SignatureData signatureData = new SignatureData();
+                     /*取得xml items*/
+                    NodeList items = getNodeList(pathMap.get("setting_xml_path"));
+                    if (Files.notExists(Paths.get(mainPath + newPolicyNo + "/" + (subPath==null?g:Integer.valueOf(subPath)) + "/" + this.pageNum))) {
+                        Files.createDirectories(Paths.get(mainPath + newPolicyNo + "/" +  (subPath==null?g:Integer.valueOf(subPath)) + "/" + this.pageNum));
+                    }
+                    this.pageNum++;
+                    if (items == null) { //若不須套印 不做下面動作
+						PdfStamper stamper = new PdfStamper(reader,
+								new FileOutputStream(pathMap.get("destination_PDF_path"))); // output PDF
+						// path
+						stamper.close();
+						reader.close();
+                        pathList.add(pathMap.get("destination_PDF_path"));
+//                        pageNum++;
+                        createPathMap(jmap, p, newPolicyNo, g,subPath);
+                        continue;
+                    }
+                    Set<String> set = new HashSet<String>();
+                    Element ele = ((Element) items.item(5));
+                    if (ele!=null&&ele.getAttribute("menuId").equals("questionnaire")) {
+//                        String barcode = jmap.at("/page/"+g+ "/" + p).asText();
+//                        List<JsonNode> questList=findQuestWithBarCode(barcode,jmap);
+//                        questMap.put(jmap.at("/page/"+g+ "/" + p).asText(),questList);
+                        this.pageNum--;
+                        continue;
+                    } else {
+                        set.add("");
+                    }
+                    
+                    for (String s : set) {     //s = 問卷json中間層字串
+
+//                        PdfStamper stamper = new PdfStamper(reader, new FileOutputStream(
+//                                ESAPI.encoder().canonicalize(pathMap.get("destination_PDF_path")))); // output PDF  path
+                    	PdfStamper stamper = new PdfStamper(reader, new FileOutputStream(pathMap.get("destination_PDF_path")));                    	
+                        
+                        for (int i = 0; i < items.getLength(); i++) {
+                        	
+                            Node item = items.item(i);
+                            Element itemElement = (Element) item;
+
+                            PdfContentByte canvas = stamper.getOverContent(pageNumber);   //第pageNumber頁內容  目前都為一份pdf一頁
+                            canvas.beginText();
+                            float x = 0;
+                            float y = 0;
+                            
+							// added 12/23 
+							float itemFontSize = kaiuFontSize;
+							
+                            // 有自訂 font size, 以自訂的 font size 為主					
+							if (itemElement.hasAttribute("fontSize")) {
+								try {
+									itemFontSize = Float.valueOf(itemElement.getAttribute("fontSize"));
+								} catch (Exception e) {
+								}
+							} // end
+							
+                            if (itemElement.getAttribute("x") != null && itemElement.getAttribute("y") != null &&
+                                !itemElement.getAttribute("x").equals("") &&
+                                !itemElement.getAttribute("y").equals("")) {
+
+                                if (itemElement.getAttribute("signatureName") != null &&
+                                    !itemElement.getAttribute("signatureName").equals("")) {
+//                                    String fieldContent = jmap
+//                                            .at("/signature/" + s + itemElement.getAttribute("itemId"))
+//                                            .asText();
+//                                    /*BASE64編碼*/
+//                                    com.itextpdf.text.Image sigImage = stringDecodeToImage(fieldContent);
+//                                    /*此段加入簽名檔data 之後產生簽名檔*/
+//                                    if (signatureData.getDataMap().get("docName") == null) {
+//                                        File xml = new File(ESAPI.encoder().canonicalize(pathMap.get("setting_xml_path")));  //xml path
+//                                        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+//                                        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+//                                        Document doc = dBuilder.parse(xml);
+//                                        doc.getDocumentElement().normalize();
+//                                        NodeList titleItems = doc.getElementsByTagName("title");
+//                                        Node title = titleItems.item(0);
+//                                        Element titleElement = (Element) title;
+//                                        if(titleElement.getAttribute("name").contains("財務狀況告知書")){
+//                                            signatureData.getDataMap().put("docName", "財務狀況告知書");
+//                                        }else{
+//                                            signatureData.getDataMap().put("docName", titleElement.getAttribute("name"));
+//                                        }
+//                                        signatureData.getDataMap().put("path", pathMap.get("destination_PDF_path"));
+//                                        signatureData.getDataMap().put("numbering", newPolicyNo);
+//                                    }
+//                                    String key = itemElement.getAttribute("signatureId");
+//                                    String name = "";
+//                                    if(!jmap.at("/signature/" + key).asText().isEmpty()) {
+//                                        name = "(" + jmap.at("/signature/" + key).asText() + ")";
+//                                    }
+//                                    signatureData.getDataMap().put(key + "Name", name); //加入姓名到簽名檔nameMap
+//                                    signatureData.getSigMap().put(key, fieldContent); //加入圖檔到簽名檔sigMap
+//                                    /*簽名圖檔Decode失敗 直接回傳null*/
+//                                    if (sigImage == null) {
+////                                        stamper.close();
+////                                        return null;
+//                                        canvas.endText();
+//                                        continue;
+//                                    }
+//                                    setImgSizeAndPos(sigImage, itemElement, canvas);     //設定圖片位置及大小
+//                                    canvas.setTextMatrix(0, 0);
+//                                    canvas.setFontAndSize(normalFont, kaiuFontSize);
+//                                    try {
+//                                        canvas.addImage(sigImage);
+//                                    }catch (Exception e){
+//                                        System.out.println("要保書套印簽名發生錯誤 檔案:"+pathMap.get("destination_PDF_path"));
+//                                        System.out.println(e.getMessage());
+//                                    }
+
+                                } else if (jmap.at("/" + itemElement.getAttribute("menuId") + "/" + s +                                   
+                                    itemElement.getAttribute("itemId")).asText().equals("v")
+                                		|| "creditCard_first".equals(itemElement.getAttribute("itemId"))
+                                		|| "creditCard_renewal".equals(itemElement.getAttribute("itemId"))) {
+                                	 // 打勾字型及位置設定
+                                    canvas.setFontAndSize(symbolFont, dejaVuFontSize); // set font and size
+                                    x = getX(jmap, itemElement, symbolFont, canvas, s, kaiuFontSize);
+                                    y = getY(jmap, itemElement, symbolFont, canvas, s);
+                                } else { // 其他字型及位置設定
+                                    canvas.setFontAndSize(normalFont, itemFontSize); // set font and size
+                                    x = getX(jmap, itemElement, normalFont, canvas, s, itemFontSize);
+                                    y = getY(jmap, itemElement, normalFont, canvas, s);
+                                }
+
+                                String content ="";
+								
+								if (itemElement.getAttribute("menuId").equals("PARAMS")
+										&& itemElement.getAttribute("itemId").equals("POLICY_CODE_1")) {
+									content = policyCodes[0];
+								} else if (itemElement.getAttribute("menuId").equals("PARAMS")
+											&& itemElement.getAttribute("itemId").equals("POLICY_CODE_2")) {
+									content = policyCodes[1];
+								} else if (itemElement.getAttribute("menuId").equals("PARAMS")
+											&& itemElement.getAttribute("itemId").equals("POLICY_CODE_3")) {
+                                    content = policyCodes[2];
+								} else if (itemElement.getAttribute("menuId").equals("PARAMS")
+                                    		&& itemElement.getAttribute("itemId").equals("POLICY_CODE")) {
+									// 依其在哪個主約，套印上該主約的保單號碼
+                                    content = policyCodes[g];
+                                } else if(itemElement.getAttribute("menuId").equals("PARAMS")
+                                    && itemElement.getAttribute("itemId").equals("SPLIT_POLICY_CODE")
+                                    && itemElement.hasAttribute("policyCodeNum")) {
+                                
+                                    Integer pos = null;
+                                    
+                                    try {
+                                        pos = Integer.parseInt(itemElement.getAttribute("policyCodeNum"));
+                                    } catch (Exception e) {}
+                                    
+                                    if (pos != null && splitPolicyCodes[g] != null
+                                            && splitPolicyCodes[g][0] != null
+                                            && splitPolicyCodes[g].length > pos - 1) {
+                                        content = splitPolicyCodes[g][pos - 1];
+                                    }
+                                                                                             
+                                } else if (itemElement.getAttribute("menuId").equals("PARAMS")
+                                    && itemElement.hasAttribute("policyCodeNum")) {
+
+                                    Integer pos = null;
+                                    int policyCodeIndex = 0;
+
+                                    if ("SPLIT_POLICY_CODE_1".equals(itemElement.getAttribute("itemId"))) {
+                                        policyCodeIndex = 0;
+                                    } else if ("SPLIT_POLICY_CODE_2".equals(itemElement.getAttribute("itemId"))) {
+                                        policyCodeIndex = 1;
+                                    } else if ("SPLIT_POLICY_CODE_3".equals(itemElement.getAttribute("itemId"))) {
+                                        policyCodeIndex = 2;
+                                    }
+
+                                    try {
+                                        pos = Integer.parseInt(itemElement.getAttribute("policyCodeNum"));
+                                    } catch (Exception e) {}
+                                    
+                                    if (pos != null && splitPolicyCodes[policyCodeIndex] != null
+                                            && splitPolicyCodes[policyCodeIndex].length > pos - 1) {
+                                        content = splitPolicyCodes[policyCodeIndex][pos - 1];
+                                    }
+                                    
+                                    if(content == null) { // error
+                                    	content = "";
+                                    }
+                                    
+								} else {
+									content = jmap.at("/" + itemElement.getAttribute("menuId") + "/" + s
+											+ itemElement.getAttribute("itemId")).asText(); // json value 取得
+                                }
+                                
+                                if (itemElement.hasAttribute("printMode")
+												&& "Chunk".equals(itemElement.getAttribute("printMode"))) {
+
+                                    // TODO：Amy 這裡寫的很不好，有時間再改吧
+                                    int wordLength = content.length();
+                                                                                
+                                    String greaterLength = itemElement.getAttribute("greaterLength");
+                                    String fontSize = itemElement.getAttribute("fontSize");
+                                    String greaterLengthFontSize = itemElement.getAttribute("greaterLengthFontSize");
+                                    String leading = itemElement.getAttribute("leading");
+                                    String greaterLeading = itemElement.getAttribute("greaterLeading");
+
+                                    String iix = itemElement.getAttribute("iix");
+                                    String iiy = itemElement.getAttribute("iiy");
+                                    String urx = itemElement.getAttribute("urx");
+                                    String ury = itemElement.getAttribute("ury");
+
+                                    float fIIx = 0;
+                                    float fIIy = 0;
+                                    float fURx = 0;
+                                    float fURy = 0;
+                                    int iGreaterLength = 0;
+                                    float fFontSize = 0;
+                                    float fGreaterLengthFontSize = 0;
+                                    float fLeading = 0;
+                                    float fGreaterLeading = 0;
+                                    float fAutoAdjustHightWhenNotGreater = 0;
+
+                                    try {
+                                        
+                                        fIIx = Float.valueOf(iix);
+                                        fIIy = Float.valueOf(iiy);
+                                        fURx = Float.valueOf(urx);
+                                        fURy = Float.valueOf(ury);												
+                                        
+                                        iGreaterLength = Integer.parseInt(greaterLength);
+                                        fFontSize = Float.valueOf(fontSize);												
+                                        fLeading = Float.valueOf(leading);
+                                        fGreaterLengthFontSize = Float.valueOf(greaterLengthFontSize);
+                                        fGreaterLeading = Float.valueOf(greaterLeading);
+
+                                        // 如果字數沒有超過指定的字數，要調整的 x 值
+                                        // 因為如果字數沒有超過的情況之下，它會靠上，加上調整值讓版面不那麼奇怪
+										if(itemElement.hasAttribute("autoAdjustHightWhenNotGreater")) {
+											try {
+												fAutoAdjustHightWhenNotGreater = Float.valueOf(itemElement.getAttribute("autoAdjustHightWhenNotGreater"));
+											} catch (Exception e) {
+											}											
+										}
+										
+                                        // 長度大於指定的長度時
+										if(wordLength > iGreaterLength) {
+											fFontSize = fGreaterLengthFontSize;
+											fLeading = fGreaterLeading;
+										} else {
+											fIIy = fIIy + fAutoAdjustHightWhenNotGreater;
+										}								
+                                        
+                                    } catch (Exception e) {
+                                    	canvas.endText(); // must do this, 不下這行會錯, 可能是因為 beginText 了卻沒有寫東西
+                                        continue; // 發生錯誤，此欄位資料跳過不套印
+                                    }
+
+                                    Font font = new Font(normalFont);
+                                    ColumnText ct2 = new ColumnText(canvas);
+                                    font.setSize(fFontSize);
+                                    Chunk c1 = new Chunk(content, font);
+                                    Phrase p1 = new Phrase(c1);
+                                    
+                                    int align = com.itextpdf.text.Element.ALIGN_JUSTIFIED;
+                                    
+									// 如果字數沒有大於設定的，要不要置中
+									if ((wordLength < iGreaterLength) && itemElement.hasAttribute("autoAlignCenterWhenNotGreater")) {
+										align = com.itextpdf.text.Element.ALIGN_CENTER;
+									}
+									
+									ct2.setSimpleColumn(p1, fIIx, fIIy, fURx, fURy, fLeading, align);								
+
+                                    ct2.go();
+
+                                } else {
+
+									// TODO: add 12/23 有自訂超過字數要設定字型大小, 兩個一定都要設
+									if (itemElement.hasAttribute("greaterLength")
+											&& itemElement.hasAttribute("greaterLengthFontSize")) {
+										try {
+											int greaterWordLength = Integer.parseInt(itemElement.getAttribute("greaterLength"));
+											float greaterLengthFontSize = Float.valueOf(itemElement.getAttribute("greaterLengthFontSize"));
+											if (content != null && content.length() > greaterWordLength) {
+												itemFontSize = greaterLengthFontSize;
+												canvas.setFontAndSize(normalFont, itemFontSize);
+												x = getX(jmap, itemElement, normalFont, canvas, s, itemFontSize);
+												y = getY(jmap, itemElement, normalFont, canvas, s);
+											}
+										} catch (Exception e) {
+											// do nothing, 還是以原來的 font size 為主
+										}
+									}									
+									
+                                    canvas.setRGBColorFill(0, 0, 80); // 顏色更改
+                                    
+                                    if (itemElement.getAttribute("wrapLine") != null &&
+                                        !itemElement.getAttribute("wrapLine").equals("")) {   //換行
+                                        int offset = 1;
+                                        if (content.matches("^\\w+$")) {   //若字串皆為英文或數字  換行字數*2
+                                            offset = 2;
+                                        }
+                                        content = contentWrap(content,
+                                                              Integer.parseInt(itemElement.getAttribute("wrapLine")) *
+                                                              offset);
+                                        String[] contentArray = content.split("\n");
+                                        canvas.endText();
+                                        for (int j = 0; j < contentArray.length; j++) {
+
+                                            if(j == 0) {
+                                                x = getXForWrapLine(jmap, itemElement, normalFont, canvas, contentArray[j], itemFontSize);
+                                                y = getYForWrapLine(jmap, itemElement, normalFont, canvas, contentArray[j], contentArray.length);
+                                            }
+
+                                            canvas.beginText();
+
+                                            if (itemElement.getAttribute("horAlign").equals("right")) {   //靠右上換行
+                                                //設定文字位置
+                                                canvas.setTextMatrix(x + ((contentArray.length - 1) * itemFontSize),
+                                                                     canvas.getPdfDocument().getPageSize().getHeight() -
+                                                                     (y + (j * itemFontSize)));
+                                                canvas.setRGBColorFill(0, 0, 80);       //顏色更改
+                                                canvas.showText(contentArray[j]);  // set text   --from json
+                                                canvas.endText();
+                                                continue;
+                                            }
+                                            canvas.setTextMatrix(x, canvas.getPdfDocument().getPageSize().getHeight() -
+                                                                    (y + (j * itemFontSize)));      //設定文字位置
+                                            canvas.showText(contentArray[j]);  // set text   --from json
+                                            canvas.endText();
+                                        }
+                                        continue;
+                                    }
+    
+									    // 為了付款授權書所做的特殊處理
+										if ("payment".equals(itemElement.getAttribute("menuId"))
+												&& (unbnNum + "_creditCard_first").equals(itemElement.getAttribute("itemId"))) {
+											content = unbn600FirstPaymentChecked;
+										}
+
+										if ("payment".equals(itemElement.getAttribute("menuId"))
+												&& (unbnNum + "_creditCard_renewal").equals(itemElement.getAttribute("itemId"))) {
+											content = unbn600RenewalPaymentChecked;
+										}
+										// end 
+                                                                                
+                                     //設定文字位置 (0,0)為左下角開始
+                                    canvas.setTextMatrix(x, canvas.getPdfDocument().getPageSize().getHeight() - y);
+                                    canvas.showText(content);  // set text   --from json, 給 null
+
+                                }
+                                                              
+                            }
+
+                            canvas.endText();
+
+                        }
+
+                        try {
+                            stamper.close();
+                            reader.close();
+                            pathList.add(pathMap.get("destination_PDF_path"));  //加入完成的PDF檔路徑到pathList
+//                            if (signatureData.getDataMap().get("docName") != null) {    //判斷是否有簽名檔 是則加到簽名檔list
+//                                signatureDataList.add(signatureData);
+//                            }
+                        }catch (Exception e){
+                            e.printStackTrace();
+                            System.out.println("PDF錯誤 錯誤檔案:"+pathMap.get("original_PDF_path"));
+                        }
+//                        pageNum++;
+                        pathMap = createPathMap(jmap, p, newPolicyNo, g,subPath);
+                        reader = new PdfReader(pathMap.get("original_PDF_path")); //input PDF path
+                    }
+                }
+            }
+        }
+            return pathList;    //回傳填寫完成的PDF pathList
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }	
+	    
 	/* 根據jsonData+xml設定檔產生PDF並回傳 */
-	private java.util.List<String> createPdf(String jsonData, String newPolicyNo, String subPath) {
+	private java.util.List<String> createPdf2(String jsonData, String newPolicyNo, String subPath) {
 
 		float kaiuFontSize = 10;
 		float dejaVuFontSize = 15;
