@@ -5,6 +5,7 @@ import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -61,17 +62,21 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.AcroFields;
+import com.itextpdf.text.pdf.PdfContentByte;
 import com.itextpdf.text.pdf.PdfDictionary;
 import com.itextpdf.text.pdf.PdfFormField;
 import com.itextpdf.text.pdf.PdfName;
 import com.itextpdf.text.pdf.PdfNumber;
 import com.itextpdf.text.pdf.PdfObject;
 import com.itextpdf.text.pdf.PdfReader;
+import com.itextpdf.text.pdf.PdfStamper;
 import com.itextpdf.text.pdf.PdfString;
+import com.itextpdf.text.pdf.TextField;
 
 import bsh.This;
 
 import javax.swing.SwingConstants;
+import java.awt.Font;
 
 public class Generator extends JFrame {
 
@@ -153,7 +158,7 @@ public class Generator extends JFrame {
 		frmXml.getContentPane().add(openPdfButton);
 		// frmXml.getContentPane().add(log);
 
-		openXmlButton = new JButton("\u9078\u64C7\u5132\u5B58\u4F4D\u7F6E");
+		openXmlButton = new JButton("選擇 XML 位置");
 		springLayout.putConstraint(SpringLayout.NORTH, openXmlButton, 16, SpringLayout.SOUTH, openPdfButton);
 		springLayout.putConstraint(SpringLayout.WEST, openXmlButton, 33, SpringLayout.WEST, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.SOUTH, openXmlButton, -546, SpringLayout.SOUTH,
@@ -299,6 +304,24 @@ public class Generator extends JFrame {
 		springLayout.putConstraint(SpringLayout.WEST, btnGenPdf, -165, SpringLayout.EAST, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.EAST, btnGenPdf, -20, SpringLayout.EAST, frmXml.getContentPane());
 		frmXml.getContentPane().add(btnGenPdf);
+		
+		JButton btnXmlPdf = new JButton("XML => PDF Form");
+		btnXmlPdf.setFont(new Font("Verdana", Font.PLAIN, 15));
+		btnXmlPdf.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try {
+					reversePdf();
+				} catch (Exception e1) {
+					txtLog.append("由 XML 反向產生套版用 PDF Form 失敗：" + newline + e1.getMessage());
+					e1.printStackTrace();
+				}
+			}
+		});
+		springLayout.putConstraint(SpringLayout.NORTH, btnXmlPdf, 11, SpringLayout.SOUTH, txtStartDate);
+		springLayout.putConstraint(SpringLayout.WEST, btnXmlPdf, -194, SpringLayout.WEST, btnGenPdf);
+		springLayout.putConstraint(SpringLayout.SOUTH, btnXmlPdf, -10, SpringLayout.NORTH, scrollPane);
+		springLayout.putConstraint(SpringLayout.EAST, btnXmlPdf, -11, SpringLayout.WEST, btnGenPdf);
+		frmXml.getContentPane().add(btnXmlPdf);
 
 	}
 
@@ -382,7 +405,7 @@ public class Generator extends JFrame {
 		}
 
 		if (this.txtXmlSavePath.getText().length() == 0 || "選擇產生完的的 XML 要放哪裡".equals(this.txtXmlSavePath.getText())) {
-			JOptionPane.showMessageDialog(null, "請選擇產生的 XML 檔案要儲存在哪裡！");
+			JOptionPane.showMessageDialog(null, "請於「選擇 XML 位置」選取產生的 XML 檔案要儲存在哪裡！");
 			return false;
 		}
 
@@ -867,6 +890,112 @@ public class Generator extends JFrame {
 
 	}
 
+
+	/**
+	 * 利用xml反組產生 PDF 檔案
+	 * 
+	 * @author Kenny
+	 */
+	private void reversePdf() throws Exception {
+		
+		if (this.txtPdfPath.getText().length() == 0 || "選擇要產生 XML 的 PDF 檔案".equals(this.txtPdfPath.getText())) {
+			JOptionPane.showMessageDialog(null, "請選擇 PDF 檔案！");
+			return;
+		}
+
+		if (this.txtXmlSavePath.getText().length() == 0 || "選擇產生完的的 XML 要放哪裡".equals(this.txtXmlSavePath.getText())) {
+			JOptionPane.showMessageDialog(null, "請於「選擇 XML 位置」選取套版的 XML 檔案！");
+			return;
+		}
+		
+		String pdfName = this.txtGenXmlName.getText().split(Pattern.quote("."))[0];
+		this.txtGenXmlName.setText(pdfName.toUpperCase() + ".xml");
+		
+		if (!checkBeforeGenPpdf())
+			return;
+		
+		try {
+			// read the pdf file.
+			
+			PdfReader reader = new PdfReader(this.txtPdfPath.getText());
+			PdfStamper stamper = new PdfStamper(reader, new FileOutputStream(pdfSavePath + "\\" + pdfName + ".pdf")); 
+			PdfContentByte canvas = stamper.getOverContent(1);
+			NodeList items = getNodeList(webPackagePath + "\\settings\\" + this.txtGenXmlName.getText());
+		
+		
+			for (int i = 0; i < items.getLength(); i++) {
+				Node item = items.item(i);              
+				Element itemElement = (Element) item;
+				String menuId = itemElement.getAttribute("menuId") != null ? itemElement.getAttribute("menuId") : "";
+				String itemId = itemElement.getAttribute("itemId") != null ? itemElement.getAttribute("itemId") :"";
+				String fName = (i+1) + "#" + menuId + "#" + itemId;
+				if(itemElement.getAttribute("horAlign") != null) {
+					String horAlign = itemElement.getAttribute("horAlign") == "left" ? "L" : "R";
+					fName = fName + "#" + horAlign;
+				}
+				String desc = itemElement.getAttribute("desc") != null && itemElement.getAttribute("desc") != "" ? itemElement.getAttribute("desc") : "無";
+				
+				if(itemElement.getAttribute("x") == null || itemElement.getAttribute("x") == "") {
+					continue;
+				}
+				
+				if(itemElement.getAttribute("y") == null || itemElement.getAttribute("y") == "") {
+					continue;
+				}
+				
+				if(itemElement.getAttribute("w") == null || itemElement.getAttribute("w") == "") {
+					continue;
+				}
+				
+				if(itemElement.getAttribute("h") == null || itemElement.getAttribute("h") == "") {
+					continue;
+				}
+
+				//計算文字所在位置
+				float x = (Float.parseFloat(itemElement.getAttribute("x")) / 100)
+						* canvas.getPdfDocument().getPageSize().getWidth();
+				float y =  ((100 - Float.parseFloat(itemElement.getAttribute("y"))) / 100)
+						* canvas.getPdfDocument().getPageSize().getHeight();
+				float w =  (Float.parseFloat(itemElement.getAttribute("w")) / 100)
+						* canvas.getPdfDocument().getPageSize().getWidth();
+				float h =  ((100 - Float.parseFloat(itemElement.getAttribute("h"))) / 100)
+						* canvas.getPdfDocument().getPageSize().getHeight();
+				
+				//新增至field
+				TextField idDocTrackTypeField = new TextField(stamper.getWriter(),
+					    new Rectangle(x, h, w, y), fName);
+				idDocTrackTypeField.setText(desc);
+				PdfFormField field1 = idDocTrackTypeField.getTextField();
+
+				//新增至field
+		        stamper.addAnnotation(field1, 1);
+
+			}
+			this.txtLog.setText("執行完成");
+			stamper.close();
+			reader.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+			this.txtLog.setText("");
+			this.txtLog.append("在執行 PDF 套版時發生錯誤！" + newline);
+		}
+		
+		
+	}
+	
+	private static NodeList getNodeList(String settingXmlPath) throws Exception {
+		try {
+			File xml = new File(settingXmlPath); // xml path
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			Document doc = dBuilder.parse(xml);
+			doc.getDocumentElement().normalize();
+			return doc.getElementsByTagName("item"); // 取得所有item標籤名 回傳Nodelist
+		} catch (Exception e) {
+			throw new Exception(e.getMessage());
+		}
+	}	
+	
 	private void checkSettingFiles(String xmlName) throws Exception {
 
 		File settingXml = new File(webPackagePath + "\\settings\\settings.xml");
@@ -913,5 +1042,4 @@ public class Generator extends JFrame {
 		}
 
 	}
-
 }
