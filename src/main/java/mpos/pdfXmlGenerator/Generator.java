@@ -104,6 +104,8 @@ public class Generator extends JFrame {
 	String dataJsonPath = "";
 	String webPackagePath = "";
 	String pdfSavePath = "";
+	private JButton openXmlFileBtn;
+	private JTextField txtXmlFilePath;
 
 	/**
 	 * tt Launch the application.
@@ -138,17 +140,16 @@ public class Generator extends JFrame {
 
 		frmXml = new JFrame();
 		frmXml.setResizable(false);
-		frmXml.setTitle("行動投保套版工具");
+		frmXml.setTitle("mPOS 行動投保套版工具");
 		frmXml.setBounds(100, 100, 745, 678);
 		frmXml.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		SpringLayout springLayout = new SpringLayout();
 		frmXml.getContentPane().setLayout(springLayout);
 
 		openPdfButton = new JButton("\u9078\u53D6 PDF \u6A94\u6848");
-		springLayout.putConstraint(SpringLayout.NORTH, openPdfButton, 21, SpringLayout.NORTH, frmXml.getContentPane());
+		springLayout.putConstraint(SpringLayout.NORTH, openPdfButton, 15, SpringLayout.NORTH, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.WEST, openPdfButton, 34, SpringLayout.WEST, frmXml.getContentPane());
-		springLayout.putConstraint(SpringLayout.SOUTH, openPdfButton, -591, SpringLayout.SOUTH,
-				frmXml.getContentPane());
+		springLayout.putConstraint(SpringLayout.SOUTH, openPdfButton, -597, SpringLayout.SOUTH, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.EAST, openPdfButton, -554, SpringLayout.EAST, frmXml.getContentPane());
 		openPdfButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg) {
@@ -158,11 +159,10 @@ public class Generator extends JFrame {
 		frmXml.getContentPane().add(openPdfButton);
 		// frmXml.getContentPane().add(log);
 
-		openXmlButton = new JButton("選擇 XML 位置");
-		springLayout.putConstraint(SpringLayout.NORTH, openXmlButton, 16, SpringLayout.SOUTH, openPdfButton);
+		openXmlButton = new JButton("選擇儲存位置");
+		springLayout.putConstraint(SpringLayout.NORTH, openXmlButton, 8, SpringLayout.SOUTH, openPdfButton);
 		springLayout.putConstraint(SpringLayout.WEST, openXmlButton, 33, SpringLayout.WEST, frmXml.getContentPane());
-		springLayout.putConstraint(SpringLayout.SOUTH, openXmlButton, -546, SpringLayout.SOUTH,
-				frmXml.getContentPane());
+		springLayout.putConstraint(SpringLayout.SOUTH, openXmlButton, -560, SpringLayout.SOUTH, frmXml.getContentPane());
 		openXmlButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg) {
 				chooseXmlSaveLocationPerformed(arg);
@@ -171,9 +171,9 @@ public class Generator extends JFrame {
 		frmXml.getContentPane().add(openXmlButton);
 
 		txtXmlSavePath = new JTextField();
-		springLayout.putConstraint(SpringLayout.EAST, openXmlButton, -9, SpringLayout.WEST, txtXmlSavePath);
 		springLayout.putConstraint(SpringLayout.WEST, txtXmlSavePath, 193, SpringLayout.WEST, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.EAST, txtXmlSavePath, -15, SpringLayout.EAST, frmXml.getContentPane());
+		springLayout.putConstraint(SpringLayout.EAST, openXmlButton, -9, SpringLayout.WEST, txtXmlSavePath);
 		txtXmlSavePath.setBackground(Color.WHITE);
 		txtXmlSavePath.setEditable(false);
 		txtXmlSavePath.setText("\u9078\u64C7\u7522\u751F\u5B8C\u7684\u7684 XML \u8981\u653E\u54EA\u88E1");
@@ -181,11 +181,11 @@ public class Generator extends JFrame {
 		txtXmlSavePath.setColumns(10);
 
 		txtPdfPath = new JTextField();
-		springLayout.putConstraint(SpringLayout.NORTH, txtXmlSavePath, 16, SpringLayout.SOUTH, txtPdfPath);
+		springLayout.putConstraint(SpringLayout.NORTH, txtXmlSavePath, 8, SpringLayout.SOUTH, txtPdfPath);
+		springLayout.putConstraint(SpringLayout.SOUTH, txtPdfPath, -599, SpringLayout.SOUTH, frmXml.getContentPane());
+		springLayout.putConstraint(SpringLayout.EAST, txtPdfPath, -16, SpringLayout.EAST, frmXml.getContentPane());
+		springLayout.putConstraint(SpringLayout.NORTH, txtPdfPath, 15, SpringLayout.NORTH, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.WEST, txtPdfPath, 7, SpringLayout.EAST, openPdfButton);
-		springLayout.putConstraint(SpringLayout.SOUTH, txtPdfPath, -591, SpringLayout.SOUTH, frmXml.getContentPane());
-		springLayout.putConstraint(SpringLayout.EAST, txtPdfPath, -17, SpringLayout.EAST, frmXml.getContentPane());
-		springLayout.putConstraint(SpringLayout.NORTH, txtPdfPath, 21, SpringLayout.NORTH, frmXml.getContentPane());
 		txtPdfPath.setText("\u9078\u64C7\u8981\u7522\u751F XML \u7684 PDF \u6A94\u6848");
 		txtPdfPath.setEditable(false);
 		txtPdfPath.setColumns(10);
@@ -193,6 +193,7 @@ public class Generator extends JFrame {
 		frmXml.getContentPane().add(txtPdfPath);
 
 		btnGenXml = new JButton("\u7522\u751F\u5957\u7248 XML \u6A94");
+		springLayout.putConstraint(SpringLayout.NORTH, btnGenXml, 159, SpringLayout.NORTH, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.WEST, btnGenXml, -164, SpringLayout.EAST, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.EAST, btnGenXml, -19, SpringLayout.EAST, frmXml.getContentPane());
 		btnGenXml.addActionListener(new ActionListener() {
@@ -209,7 +210,6 @@ public class Generator extends JFrame {
 		frmXml.getContentPane().add(btnGenXml);
 
 		scrollPane = new JScrollPane();
-		springLayout.putConstraint(SpringLayout.SOUTH, btnGenXml, -64, SpringLayout.NORTH, scrollPane);
 		springLayout.putConstraint(SpringLayout.WEST, scrollPane, 22, SpringLayout.WEST, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.NORTH, scrollPane, 266, SpringLayout.NORTH, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.SOUTH, scrollPane, -17, SpringLayout.SOUTH, frmXml.getContentPane());
@@ -228,25 +228,22 @@ public class Generator extends JFrame {
 		frmXml.getContentPane().add(lblXml);
 
 		label_1 = new JLabel("\u8981\u4FDD\u6587\u4EF6\u540D\u7A31");
-		springLayout.putConstraint(SpringLayout.NORTH, label_1, 27, SpringLayout.SOUTH, openXmlButton);
+		springLayout.putConstraint(SpringLayout.SOUTH, label_1, -6, SpringLayout.NORTH, btnGenXml);
 		label_1.setHorizontalAlignment(SwingConstants.RIGHT);
 		frmXml.getContentPane().add(label_1);
 
 		txtPdfName = new JTextField();
-		springLayout.putConstraint(SpringLayout.EAST, label_1, -19, SpringLayout.WEST, txtPdfName);
-		springLayout.putConstraint(SpringLayout.NORTH, btnGenXml, 12, SpringLayout.SOUTH, txtPdfName);
 		springLayout.putConstraint(SpringLayout.WEST, txtPdfName, 193, SpringLayout.WEST, frmXml.getContentPane());
+		springLayout.putConstraint(SpringLayout.SOUTH, txtPdfName, -5, SpringLayout.NORTH, btnGenXml);
 		springLayout.putConstraint(SpringLayout.EAST, txtPdfName, -19, SpringLayout.EAST, frmXml.getContentPane());
-		springLayout.putConstraint(SpringLayout.SOUTH, txtXmlSavePath, -19, SpringLayout.NORTH, txtPdfName);
-		springLayout.putConstraint(SpringLayout.SOUTH, txtPdfName, -499, SpringLayout.SOUTH, frmXml.getContentPane());
-		springLayout.putConstraint(SpringLayout.NORTH, txtPdfName, 116, SpringLayout.NORTH, frmXml.getContentPane());
+		springLayout.putConstraint(SpringLayout.EAST, label_1, -19, SpringLayout.WEST, txtPdfName);
 		txtPdfName.setColumns(10);
 		txtPdfName.setBackground(Color.WHITE);
 		frmXml.getContentPane().add(txtPdfName);
 
 		lblPageindex = new JLabel("PageIndex");
+		springLayout.putConstraint(SpringLayout.NORTH, lblPageindex, 175, SpringLayout.NORTH, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.EAST, lblXml, 0, SpringLayout.EAST, lblPageindex);
-		springLayout.putConstraint(SpringLayout.NORTH, lblPageindex, 32, SpringLayout.SOUTH, label_1);
 		springLayout.putConstraint(SpringLayout.NORTH, lblXml, 37, SpringLayout.SOUTH, lblPageindex);
 		lblPageindex.setHorizontalAlignment(SwingConstants.RIGHT);
 		springLayout.putConstraint(SpringLayout.WEST, lblPageindex, 97, SpringLayout.WEST, frmXml.getContentPane());
@@ -254,22 +251,20 @@ public class Generator extends JFrame {
 		frmXml.getContentPane().add(lblPageindex);
 
 		txtPageIndex = new JTextField();
+		springLayout.putConstraint(SpringLayout.NORTH, txtPageIndex, 17, SpringLayout.SOUTH, txtPdfName);
 		springLayout.putConstraint(SpringLayout.WEST, txtPageIndex, 19, SpringLayout.EAST, lblPageindex);
-		springLayout.putConstraint(SpringLayout.SOUTH, txtPageIndex, -445, SpringLayout.SOUTH, frmXml.getContentPane());
-		springLayout.putConstraint(SpringLayout.NORTH, txtPageIndex, 27, SpringLayout.SOUTH, txtPdfName);
 		txtPageIndex.setText("1");
 		txtPageIndex.setColumns(10);
 		txtPageIndex.setBackground(Color.WHITE);
 		frmXml.getContentPane().add(txtPageIndex);
 
 		lblStartdate = new JLabel("StartDate");
-		springLayout.putConstraint(SpringLayout.NORTH, lblStartdate, 31, SpringLayout.SOUTH, txtPdfName);
+		springLayout.putConstraint(SpringLayout.NORTH, lblStartdate, 21, SpringLayout.SOUTH, txtPdfName);
 		frmXml.getContentPane().add(lblStartdate);
 
 		txtStartDate = new JTextField();
-		springLayout.putConstraint(SpringLayout.NORTH, txtStartDate, 27, SpringLayout.SOUTH, txtPdfName);
+		springLayout.putConstraint(SpringLayout.NORTH, txtStartDate, 17, SpringLayout.SOUTH, txtPdfName);
 		springLayout.putConstraint(SpringLayout.WEST, txtStartDate, 392, SpringLayout.WEST, frmXml.getContentPane());
-		springLayout.putConstraint(SpringLayout.SOUTH, txtStartDate, -68, SpringLayout.NORTH, scrollPane);
 		springLayout.putConstraint(SpringLayout.EAST, txtStartDate, -65, SpringLayout.WEST, btnGenXml);
 		springLayout.putConstraint(SpringLayout.EAST, lblStartdate, -8, SpringLayout.WEST, txtStartDate);
 		txtStartDate.setColumns(10);
@@ -282,6 +277,7 @@ public class Generator extends JFrame {
 		this.txtStartDate.setText(strDate);
 
 		txtGenXmlName = new JTextField();
+		springLayout.putConstraint(SpringLayout.SOUTH, txtPageIndex, -31, SpringLayout.NORTH, txtGenXmlName);
 		springLayout.putConstraint(SpringLayout.NORTH, txtGenXmlName, -37, SpringLayout.NORTH, scrollPane);
 		springLayout.putConstraint(SpringLayout.WEST, txtGenXmlName, 0, SpringLayout.WEST, txtPageIndex);
 		springLayout.putConstraint(SpringLayout.SOUTH, txtGenXmlName, -9, SpringLayout.NORTH, scrollPane);
@@ -290,7 +286,8 @@ public class Generator extends JFrame {
 		frmXml.getContentPane().add(txtGenXmlName);
 
 		btnGenPdf = new JButton("套版產生 PDF");
-		springLayout.putConstraint(SpringLayout.NORTH, btnGenPdf, 7, SpringLayout.SOUTH, btnGenXml);
+		springLayout.putConstraint(SpringLayout.SOUTH, btnGenXml, -4, SpringLayout.NORTH, btnGenPdf);
+		springLayout.putConstraint(SpringLayout.NORTH, btnGenPdf, 209, SpringLayout.NORTH, frmXml.getContentPane());
 		springLayout.putConstraint(SpringLayout.SOUTH, btnGenPdf, -10, SpringLayout.NORTH, scrollPane);
 		btnGenPdf.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -306,6 +303,8 @@ public class Generator extends JFrame {
 		frmXml.getContentPane().add(btnGenPdf);
 		
 		JButton btnXmlPdf = new JButton("XML => PDF Form");
+		springLayout.putConstraint(SpringLayout.SOUTH, txtStartDate, -11, SpringLayout.NORTH, btnXmlPdf);
+		springLayout.putConstraint(SpringLayout.NORTH, btnXmlPdf, 209, SpringLayout.NORTH, frmXml.getContentPane());
 		btnXmlPdf.setFont(new Font("Verdana", Font.PLAIN, 15));
 		btnXmlPdf.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -317,11 +316,35 @@ public class Generator extends JFrame {
 				}
 			}
 		});
-		springLayout.putConstraint(SpringLayout.NORTH, btnXmlPdf, 11, SpringLayout.SOUTH, txtStartDate);
 		springLayout.putConstraint(SpringLayout.WEST, btnXmlPdf, -194, SpringLayout.WEST, btnGenPdf);
 		springLayout.putConstraint(SpringLayout.SOUTH, btnXmlPdf, -10, SpringLayout.NORTH, scrollPane);
 		springLayout.putConstraint(SpringLayout.EAST, btnXmlPdf, -11, SpringLayout.WEST, btnGenPdf);
 		frmXml.getContentPane().add(btnXmlPdf);
+		
+		openXmlFileBtn = new JButton("選擇套版 XML");
+		openXmlFileBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				chooseXmlFileLocationPerformed(e);
+			}
+		});
+		springLayout.putConstraint(SpringLayout.NORTH, txtPdfName, 7, SpringLayout.SOUTH, openXmlFileBtn);
+		springLayout.putConstraint(SpringLayout.NORTH, openXmlFileBtn, 90, SpringLayout.NORTH, frmXml.getContentPane());
+		springLayout.putConstraint(SpringLayout.WEST, openXmlFileBtn, 34, SpringLayout.WEST, frmXml.getContentPane());
+		springLayout.putConstraint(SpringLayout.SOUTH, openXmlFileBtn, 36, SpringLayout.SOUTH, openXmlButton);
+		springLayout.putConstraint(SpringLayout.EAST, openXmlFileBtn, 185, SpringLayout.WEST, frmXml.getContentPane());
+		frmXml.getContentPane().add(openXmlFileBtn);
+		
+		txtXmlFilePath = new JTextField();
+		springLayout.putConstraint(SpringLayout.SOUTH, txtXmlFilePath, -525, SpringLayout.SOUTH, frmXml.getContentPane());
+		springLayout.putConstraint(SpringLayout.SOUTH, txtXmlSavePath, -6, SpringLayout.NORTH, txtXmlFilePath);
+		springLayout.putConstraint(SpringLayout.NORTH, txtXmlFilePath, 89, SpringLayout.NORTH, frmXml.getContentPane());
+		springLayout.putConstraint(SpringLayout.WEST, txtXmlFilePath, 9, SpringLayout.EAST, openXmlFileBtn);
+		springLayout.putConstraint(SpringLayout.EAST, txtXmlFilePath, 540, SpringLayout.EAST, openXmlFileBtn);
+		txtXmlFilePath.setText("選擇產生完的的 XML 要放哪裡");
+		txtXmlFilePath.setEditable(false);
+		txtXmlFilePath.setColumns(10);
+		txtXmlFilePath.setBackground(Color.WHITE);
+		frmXml.getContentPane().add(txtXmlFilePath);
 
 	}
 
@@ -377,6 +400,28 @@ public class Generator extends JFrame {
 		}
 
 	}
+	
+	public void chooseXmlFileLocationPerformed(ActionEvent e) {
+
+		// Handle open button action.
+		if (e.getSource() == openXmlFileBtn) {
+
+			FileNameExtensionFilter filter = new FileNameExtensionFilter("XML ONLY", "xml", "xml");
+			fcXml.setFileFilter(filter);
+			fcXml.setFileSelectionMode(JFileChooser.FILES_ONLY);
+			int returnVal = fcXml.showOpenDialog(Generator.this);
+
+			if (returnVal == JFileChooser.APPROVE_OPTION) {
+				File file = fcXml.getSelectedFile();
+				this.txtXmlFilePath.setText(file.getPath());
+				txtLog.append("XML 儲存路徑: " + file.getPath() + "." + newline);
+			} else {
+				txtLog.append("Open command cancelled by user." + newline);
+			}
+			txtLog.setCaretPosition(txtLog.getDocument().getLength());
+		}
+
+	}
 
 	/**
 	 * 產生 XML 套版檔案的儲存名稱
@@ -405,7 +450,7 @@ public class Generator extends JFrame {
 		}
 
 		if (this.txtXmlSavePath.getText().length() == 0 || "選擇產生完的的 XML 要放哪裡".equals(this.txtXmlSavePath.getText())) {
-			JOptionPane.showMessageDialog(null, "請於「選擇 XML 位置」選取產生的 XML 檔案要儲存在哪裡！");
+			JOptionPane.showMessageDialog(null, "請於「選擇儲存位置」選取產生的 XML 檔案要儲存在哪裡！");
 			return false;
 		}
 
@@ -903,24 +948,22 @@ public class Generator extends JFrame {
 			return;
 		}
 
-		if (this.txtXmlSavePath.getText().length() == 0 || "選擇產生完的的 XML 要放哪裡".equals(this.txtXmlSavePath.getText())) {
-			JOptionPane.showMessageDialog(null, "請於「選擇 XML 位置」選取套版的 XML 檔案！");
+		if (this.txtXmlFilePath.getText().length() == 0 || "選擇產生完的的 XML 要放哪裡".equals(this.txtXmlFilePath	.getText())) {
+			JOptionPane.showMessageDialog(null, "請於「選擇套版 XML」選取套版的 XML 檔案！");
 			return;
-		}
-		
-		String pdfName = this.txtGenXmlName.getText().split(Pattern.quote("."))[0];
-		this.txtGenXmlName.setText(pdfName.toUpperCase() + ".xml");
-		
-		if (!checkBeforeGenPpdf())
-			return;
+		}		
 		
 		try {
-			// read the pdf file.
+			
+			File file = new File(this.txtPdfPath.getText());
+			String parentPath = file.getAbsoluteFile().getParent();
+			
+			String pdfName = file.getName().split(Pattern.quote("."))[0];			
 			
 			PdfReader reader = new PdfReader(this.txtPdfPath.getText());
-			PdfStamper stamper = new PdfStamper(reader, new FileOutputStream(pdfSavePath + "\\" + pdfName + ".pdf")); 
+			PdfStamper stamper = new PdfStamper(reader, new FileOutputStream(parentPath + "\\" + pdfName + "_Form.pdf")); 
 			PdfContentByte canvas = stamper.getOverContent(1);
-			NodeList items = getNodeList(webPackagePath + "\\settings\\" + this.txtGenXmlName.getText());
+			NodeList items = getNodeList(this.txtXmlFilePath.getText());
 		
 		
 			for (int i = 0; i < items.getLength(); i++) {
@@ -951,7 +994,7 @@ public class Generator extends JFrame {
 					continue;
 				}
 
-				//計算文字所在位置
+				// 計算文字所在位置
 				float x = (Float.parseFloat(itemElement.getAttribute("x")) / 100)
 						* canvas.getPdfDocument().getPageSize().getWidth();
 				float y =  ((100 - Float.parseFloat(itemElement.getAttribute("y"))) / 100)
@@ -962,16 +1005,15 @@ public class Generator extends JFrame {
 						* canvas.getPdfDocument().getPageSize().getHeight();
 				
 				//新增至field
-				TextField idDocTrackTypeField = new TextField(stamper.getWriter(),
-					    new Rectangle(x, h, w, y), fName);
-				idDocTrackTypeField.setText(desc);
+				TextField idDocTrackTypeField = new TextField(stamper.getWriter(), new Rectangle(x, h, w, y), fName);
+				idDocTrackTypeField.setDefaultText(desc);
 				PdfFormField field1 = idDocTrackTypeField.getTextField();
 
 				//新增至field
 		        stamper.addAnnotation(field1, 1);
 
 			}
-			this.txtLog.setText("執行完成");
+			this.txtLog.setText("執行完成, 成功產生 PDF 表單於： " + parentPath + "\\" + pdfName + "_Form.pdf" + newline);
 			stamper.close();
 			reader.close();
 		} catch (Exception e) {
